@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.2 2002/01/16 22:19:47 greve Exp $
+//  $Id: spamass-milter.cpp,v 1.3 2002/01/16 22:24:52 greve Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -107,6 +107,7 @@ main(int argc, char* argv[])
   // ONLY command line option: socket filename!
   if ( argc != 2 )
     {
+      cout << PACKAGE << "- Version" << VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
       cout << "Usage: spamass-milter <socket>" << endl;
       _exit(0);
