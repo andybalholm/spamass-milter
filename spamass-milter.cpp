@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.80 2004/07/16 21:46:00 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.81 2004/07/29 02:15:09 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.80 2004/07/16 21:46:00 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.81 2004/07/29 02:15:09 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -1596,9 +1596,9 @@ SpamAssassin::local_user()
   // assuming we have a recipient in the form: <username@somehost.somedomain>
   // (angle brackets optional) we return 'username'
   if (_rcpt[0] == '<')
-    return _rcpt.substr(1, _rcpt.find_first_of('@+')-1);
+    return _rcpt.substr(1, _rcpt.find_first_of("@+")-1);
   else
-  	return _rcpt.substr(0, _rcpt.find_first_of('@+'));
+  	return _rcpt.substr(0, _rcpt.find_first_of("@+"));
 }
 
 string
