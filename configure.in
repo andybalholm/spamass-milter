@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.24 2003/06/10 04:57:40 dnelson Exp $
+# $Id: configure.in,v 1.25 2003/06/18 18:57:57 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.3a+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.24 $)
+AC_REVISION($Revision: 1.25 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -15,6 +15,9 @@ AC_PROG_CC
 VL_PROG_CC_WARNINGS
 CFLAGS="$CFLAGS $VL_WARN_CFLAGS"
 CXXFLAGS="$CXXFLAGS $VL_WARN_CFLAGS"
+PIKE_INCLUDE_PATHS
+PIKE_LIBRARY_PATHS
+AM_WITH_DMALLOC
 
 # Search for spamc
 dnl AC_ARG_VAR(SPAMC,[Spamc command])
