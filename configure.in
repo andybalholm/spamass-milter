@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.32 2003/08/13 03:47:56 dnelson Exp $
+# $Id: configure.in,v 1.33 2003/08/29 16:01:47 dnelson Exp $
 AC_INIT(spamass-milter, 0.2.0+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.32 $)
+AC_REVISION($Revision: 1.33 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -16,6 +16,9 @@ VL_PROG_CC_WARNINGS
 CFLAGS="$CFLAGS $VL_WARN_CFLAGS"
 CXXFLAGS="$CXXFLAGS $VL_WARN_CFLAGS"
 AC_LANG(C++)
+
+# Try and disable all inlining; gdb cannot process inline methods
+AC_PIKE_COMPILER_FLAG(-fno-default-inline,fno_default_inline,CFLAGS)
 
 PIKE_INCLUDE_PATHS
 PIKE_LIBRARY_PATHS
