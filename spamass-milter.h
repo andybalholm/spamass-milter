@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.4 2002/04/27 17:05:32 greve Exp $
+//  $Id: spamass-milter.h,v 1.5 2002/07/23 02:02:12 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -26,6 +26,8 @@
 //            Michael Brown <michaelb@opentext.com>
 //
 
+using namespace std;
+
 string retrieve_field(const string&, const string&);
 
 sfsistat mlfi_envfrom(SMFICTX*, char**);
@@ -37,22 +39,7 @@ sfsistat mlfi_close(SMFICTX*);
 sfsistat mlfi_abort(SMFICTX*);
 sfsistat mlfi_abort(SMFICTX*);
 
-struct smfiDesc smfilter =
-  {
-    "SpamAssassin", // filter name
-    SMFI_VERSION,   // version code -- leave untouched
-    SMFIF_ADDHDRS|SMFIF_CHGHDRS|SMFIF_CHGBODY,  // flags
-    NULL, // info filter callback
-    NULL, // HELO filter callback
-    mlfi_envfrom, // envelope filter callback
-    NULL, // envelope recipient filter callback
-    mlfi_header, // header filter callback
-    mlfi_eoh, // end of header callback
-    mlfi_body, // body filter callback
-    mlfi_eom, // end of message callback
-    mlfi_abort, // message aborted callback
-    mlfi_close, // connection cleanup callback
-  };
+extern struct smfiDesc smfilter;
 
 class SpamAssassin {
 public:
@@ -84,6 +71,7 @@ public:
 
 private:
   void empty_and_close_pipe();
+  int read_pipe();
 
 public:  
   // flags
@@ -107,6 +95,7 @@ public:
 void assassinate(SMFICTX*, SpamAssassin*);
 
 void throw_error(const string&);
+void debug(int level, const char* string, ...);
 string::size_type find_nocase(const string&, const string&, string::size_type = 0);
 int cmp_nocase_partial(const string&, const string&);
-
+void closeall(int fd);

@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.8 2002/04/27 17:05:32 greve Exp $
+//  $Id: spamass-milter.cpp,v 1.9 2002/07/23 02:02:12 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -71,11 +71,14 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <syslog.h>
 #include <signal.h>
+#include <poll.h>
 #include <errno.h>
 
 // C++ includes
@@ -101,38 +104,61 @@ extern "C" {
 
 // }}} 
 
+struct smfiDesc smfilter =
+  {
+    "SpamAssassin", // filter name
+    SMFI_VERSION,   // version code -- leave untouched
+    SMFIF_ADDHDRS|SMFIF_CHGHDRS|SMFIF_CHGBODY,  // flags
+    NULL, // info filter callback
+    NULL, // HELO filter callback
+    mlfi_envfrom, // envelope filter callback
+    NULL, // envelope recipient filter callback
+    mlfi_header, // header filter callback
+    mlfi_eoh, // end of header callback
+    mlfi_body, // body filter callback
+    mlfi_eom, // end of message callback
+    mlfi_abort, // message aborted callback
+    mlfi_close, // connection cleanup callback
+  };
+
+int flag_debug=0;
+
 // {{{ main()
 
 int
 main(int argc, char* argv[])
 {
-   int c;
-	const char *args = "p:f";
+   int c, err = 0;
+   const char *args = "p:fd:";
    char *sock = NULL;
    bool dofork = false;
 
 	/* Process command line options */
 	while ((c = getopt(argc, argv, args)) != -1) {
 		switch (c) {
-		   case 'p':
-            if (optarg == NULL || *optarg == '\0') {
-					(void) fprintf(stderr, "Illegal conn: %s\n", optarg);
-					exit(EX_USAGE);
-            }
+			case 'p':
 				sock = strdup(optarg);
 				break;
 			case 'f':
 				dofork = true;
 				break;
+			case 'd':
+				flag_debug = atoi(optarg);
+				break;
+			case '?':
+				err = 1;
+				break;
 		}
 	}
 
-   if (sock == NULL) {
-      cout << PACKAGE << "- Version" << VERSION << endl;
+   if (!sock || err) {
+      cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p <socket> [-f]" << endl;
-      cout << "   -f: forks into background" << endl;
-      _exit(EX_USAGE);
+      cout << "Usage: spamass-milter -p socket [-f] [-d nn]" << endl;
+      cout << "   -p socket: path to create socket" << endl;
+      cout << "   -f: fork into background" << endl;
+      cout << "   -d nn: set debug level to nn (1 or 2).  Logs to syslog" << endl;
+      exit(EX_USAGE);
    }
 
 	if (dofork == true) {
@@ -152,12 +178,14 @@ main(int argc, char* argv[])
       if (stat(sock,&junk) == 0) unlink(sock);
    }
 
+   openlog("spamass-milter", LOG_PID, LOG_MAIL);
+
    (void) smfi_setconn(sock);
 	if (smfi_register(smfilter) == MI_FAILURE) {
 		fprintf(stderr, "smfi_register failed\n");
 		exit(EX_UNAVAILABLE);
 	} else {
-      fprintf(stderr, "smfi_register succeeded\n");
+      debug(1, "smfi_register succeeded");
    }
 	return smfi_main();
 };
@@ -360,6 +388,7 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 {
   SpamAssassin* assassin;
 
+  debug(1, "mlfi_envfrom: enter");
   try {
     // launch new SpamAssassin
     assassin=new SpamAssassin;
@@ -373,6 +402,8 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
   smfi_setpriv(ctx, static_cast<void*>(assassin));
 
   // tell Milter to continue
+  debug(1, "mlfi_envfrom: exit");
+
   return SMFIS_CONTINUE;
 };
 
@@ -389,6 +420,7 @@ sfsistat
 mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+  debug(1, "mlfi_header: enter");
 
   // Is it a "X-Spam-" header field?
   if ( cmp_nocase_partial(string("X-Spam-"), string(headerf)) == 0 )
@@ -441,10 +473,13 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
+      debug(1, "mlfi_header: exit");
       return SMFIS_TEMPFAIL;
     };
   
   // go on...
+  debug(1, "mlfi_header: exit");
+
   return SMFIS_CONTINUE;
 };
 
@@ -459,6 +494,8 @@ mlfi_eoh(SMFICTX* ctx)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
 
+  debug(1, "mlfi_eoh: enter");
+
   try {
     // add blank line between header and body
     assassin->output("\n\n",2);
@@ -467,10 +504,14 @@ mlfi_eoh(SMFICTX* ctx)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
+  
+      debug(1, "mlfi_eoh: exit");
       return SMFIS_TEMPFAIL;
     };
   
   // go on...
+
+  debug(1, "mlfi_eoh: exit");
   return SMFIS_CONTINUE;
 };
 
@@ -482,6 +523,7 @@ mlfi_eoh(SMFICTX* ctx)
 sfsistat
 mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
 {
+  debug(1, "mlfi_body: enter");
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
  
   try {
@@ -491,10 +533,12 @@ mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
+      debug(1, "mlfi_body: exit");
       return SMFIS_TEMPFAIL;
     };
 
   // go on...
+  debug(1, "mlfi_body: exit");
   return SMFIS_CONTINUE;
 };
 
@@ -510,6 +554,7 @@ mlfi_eom(SMFICTX* ctx)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
  
+  debug(1, "mlfi_eom: enter");
   try {
 
     // close output pipe to signal EOF to SpamAssassin
@@ -534,10 +579,12 @@ mlfi_eom(SMFICTX* ctx)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
+      debug(1, "mlfi_eom: exit");
       return SMFIS_TEMPFAIL;
     };
   
   // go on...
+  debug(1, "mlfi_eom: exit");
   return SMFIS_CONTINUE;
 };
 
@@ -547,6 +594,7 @@ mlfi_eom(SMFICTX* ctx)
 sfsistat
 mlfi_close(SMFICTX* ctx)
 {
+  debug(1, "mlfi_close");
   return SMFIS_ACCEPT;
 };
 
@@ -561,6 +609,7 @@ mlfi_abort(SMFICTX* ctx)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
 
+  debug(1, "mlfi_abort");
   smfi_setpriv(ctx, static_cast<void*>(0));
   delete assassin;
 
@@ -601,6 +650,8 @@ SpamAssassin::SpamAssassin():
       dup2(pipe_io[1][1],1);
       dup2(pipe_io[1][1],2);
 
+      closeall(3);
+
       // execute spamc 
       // absolute path (determined in autoconf) 
       // should be a little more secure
@@ -631,6 +682,14 @@ SpamAssassin::SpamAssassin():
   close(pipe_io[1][1]);
   pipe_io[0][0]=-1;
   pipe_io[1][1]=-1;
+
+  // mark the pipes non-blocking
+  if(fcntl(pipe_io[0][1], F_SETFL, O_NONBLOCK) == -1)
+     throw string(string("Cannot set pipe01 nonblocking: ")+string(strerror(errno)));
+#if 0  /* don't really need to make the sink pipe nonblocking */
+  if(fcntl(pipe_io[1][0], F_SETFL, O_NONBLOCK) == -1)
+     throw string(string("Cannot set pipe10 nonblocking: ")+string(strerror(errno)));
+#endif
 
   // we have to assume the client is running now.
   running=true;
@@ -670,44 +729,74 @@ SpamAssassin::~SpamAssassin()
 void
 SpamAssassin::output(const void* buffer, long size)
 {
+  debug(1, "::output enter");
+
   // if there are problems, fail.
   if (!running || error)
     throw string("tried output despite problems. failed.");
-  
+
   // send to SpamAssassin
   long total(0), wsize(0);
   string reason;
   int status;
   do {
-    switch(wsize=write(pipe_io[0][1], (const char *)buffer+total, size-total))
-      {
-      case -1:
-	reason = string(strerror(errno));
+	struct pollfd fds[2];
+	int nfds = 2, nready;
+	fds[0].fd = pipe_io[0][1];
+	fds[0].events = POLLOUT;
+	fds[1].fd = pipe_io[1][0];
+	fds[1].events = POLLIN;
 
-	// close the pipes
-	close(pipe_io[0][1]);
-	close(pipe_io[1][0]);
-	pipe_io[0][1]=-1;	
-	pipe_io[1][0]=-1;	
+	debug(2, "polling");
+	nready = poll(fds, nfds, 1000);
+	if (nready == -1)
+		throw("poll failed");
 
-	// Slaughter child
-	kill(pid, SIGKILL);
+	debug(2, "poll returned %d", nready);
 
-	// set flags
-	error = true;
-	running = false;
+	if (fds[1].revents & POLLIN)
+	{
+		debug(2, "poll says I can read");
+		read_pipe();
+	}
+
+	if (fds[0].revents & POLLOUT)
+	{
+		debug(2, "poll says I can write");
+		switch(wsize = write(pipe_io[0][1], (char *)buffer + total, size - total))
+		{
+		  case -1:
+			if (errno == EAGAIN)
+				continue;
+			reason = string(strerror(errno));
+
+			// close the pipes
+			close(pipe_io[0][1]);
+			close(pipe_io[1][0]);
+			pipe_io[0][1]=-1;	
+			pipe_io[1][0]=-1;	
+
+			// Slaughter child
+			kill(pid, SIGKILL);
+
+			// set flags
+			error = true;
+			running = false;
 	
-	// wait until child is dead
-	waitpid(pid, &status, 0);
+			// wait until child is dead
+			waitpid(pid, &status, 0);
 
-	throw string(string("write error: ")+reason);	
-	break;
-      default:
-	total+=wsize;
-	break;
-      };
+			throw string(string("write error: ")+reason);	
+			break;
+	      default:
+			total += wsize;
+			debug(2, "wrote %d bytes");
+			break;
+		}
+	}
   } while ( total < size );
-  
+
+  debug(1, "::output exit");
 };
 
 // close output pipe
@@ -722,6 +811,7 @@ SpamAssassin::close_output()
 void
 SpamAssassin::input()
 {
+	debug(1, "::input enter");
   // if the child has exited or we experienced an error, return
   // immediately.
   if (!running || error)
@@ -740,6 +830,7 @@ SpamAssassin::input()
       error = true;
       throw string(string("waitpid error: ")+string(strerror(errno)));
     }; 
+	debug(1, "::input exit");
 };
 
 //
@@ -871,62 +962,76 @@ SpamAssassin::set_subject(const string& val)
 };
 
 //
+// Read available output from SpamAssassin client
+//
+int
+SpamAssassin::read_pipe()
+{
+	long size;
+	int  status;
+	char iobuff[1024];
+	string reason;
+
+	debug(1, "::read_pipe enter");
+
+	if (pipe_io[1][0] == -1)
+	{
+		debug(1, "::read_pipe exit - shouldn't have been called?");
+		return 0;
+	}
+
+	size = read(pipe_io[1][0], iobuff, 1024);
+
+	if (size < 0)
+    {
+		// Error. 
+		reason = string(strerror(errno));
+		
+		// Close remaining pipe.
+		close(pipe_io[1][0]);
+		pipe_io[1][0] = -1;
+	
+		// Slaughter child
+		kill(pid, SIGKILL);
+	
+		// set flags
+		error = true;
+		running = false;
+	
+		// wait until child is dead
+		waitpid(pid, &status, 0);
+	
+		// throw the error message that caused this trouble
+		throw string(string("read error: ")+reason);
+	} else if ( size == 0 )
+	{
+
+		// EOF. Close the pipe
+		if(close(pipe_io[1][0]))
+			throw string(string("close error: ")+string(strerror(errno)));
+		pipe_io[1][0] = -1;
+	
+	} else
+	{ 
+		// append to mail buffer 
+		mail.append(iobuff, size);
+		debug(2, "read %d bytes");
+	}
+	debug(1, "::read_pipe exit");
+	return size;
+};
+
+//
 // Read all output from SpamAssassin client
 // and close the pipe
 //
 void
 SpamAssassin::empty_and_close_pipe()
 {
-  long size;
-  int  status;
-  char iobuff[1024];
-  string reason;
-
-  do {
-
-    size=read(pipe_io[1][0],iobuff,1024);
-
-    if (size<0)
-      {
-
-	// Error. 
-	reason=string(strerror(errno));
-		
-	// Close remaining pipe.
-	close(pipe_io[1][0]);
-	pipe_io[1][0]=-1;
-	
-	// Slaughter child
-	kill(pid, SIGKILL);
-	
-	// set flags
-	error = true;
-	running = false;
-	
-	// wait until child is dead
-	waitpid(pid, &status, 0);
-	
-	// throw the error message that caused this trouble
-	throw string(string("read error: ")+reason);
-
-      }
-    else if ( size == 0 )
-      {
-
-	// EOF. Close the pipe
-	if(close(pipe_io[1][0]))
-	  throw string(string("close error: ")+string(strerror(errno)));
-	pipe_io[1][0]=-1;
-	
-      }
-    else
-      { 
-	// append to mail buffer 
-	mail.append(iobuff, size);
-      }
-    
-  } while (size > 0);
-
+	debug(1, "::empty_and_close_pipe enter");
+	while (read_pipe())
+		;
+	debug(1, "::empty_and_close_pipe exit");
 };
 
 // }}}
@@ -937,8 +1042,44 @@ SpamAssassin::empty_and_close_pipe()
 void
 throw_error(const string& errmsg)
 {
-  syslog(LOG_PERROR|LOG_PID|LOG_CONS|LOG_MAIL,errmsg.c_str());
+  syslog(LOG_ERR, errmsg.c_str());
 };
+
+void debug(int level, const char* string, ...)
+{
+	if (flag_debug >= level)
+	{
+#if defined(HAVE_VSYSLOG)
+	    va_list vl;
+	    va_start(vl, string);
+		vsyslog(LOG_ERR, string, vl);
+		va_end(vl);
+#else
+#if defined(HAVE_VASPRINTF)
+		char *buf;
+#else
+		char buf[1024];
+#endif
+	    va_list vl;
+	    va_start(vl, string);
+#if defined(HAVE_VASPRINTF)
+	    vasprintf(&buf, string, vl);
+#else
+#if defined(HAVE_VSNPRINTF)
+	    vsnprintf(buf, sizeof(buf)-1, string, vl);
+#else
+		/* XXX possible buffer overflow here; be careful what you pass to debug() */
+		vsprintf(buf, string, vl);
+#endif
+#endif
+	    va_end(vl);
+		syslog(LOG_ERR, "%s", buf);
+#if defined(HAVE_VASPRINTF)
+	    free(buf);
+#endif 
+#endif /* vsyslog */
+	}
+}
 
 // case-insensitive search 
 string::size_type 
@@ -981,6 +1122,14 @@ cmp_nocase_partial(const string& s, const string& s2)
   return 0;
 
 };
+
+/* closeall() - close all FDs >= a specified value */ 
+void closeall(int fd) 
+{
+	int fdlimit = sysconf(_SC_OPEN_MAX); 
+	while (fd < fdlimit) 
+		close(fd++); 
+}
 
 // }}}
 // vim6:ai:noexpandtab

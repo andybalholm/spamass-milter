@@ -1,13 +1,11 @@
-#!/bin/sh
+#!/bin/sh -e
 #
 # Run this to update & generate all the automatic things
 #
 
-autoheader
 aclocal
+autoheader
 automake --add-missing
 autoconf
 
 ./configure $*
-
-

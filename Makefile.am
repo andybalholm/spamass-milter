@@ -1,26 +1,15 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.2 2002/01/16 21:41:21 greve Exp $
+## $Id: Makefile.am,v 1.3 2002/07/23 02:02:12 dnelson Exp $
 
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
-SPAMC = @SPAMC@
+AUTOMAKE_OPTIONS = no-dependencies
 
-INCLUDES = 
-LIBS = @LIBS@ /usr/lib/libmilter/libmilter.a /usr/lib/libmilter/libsm.a
+CLEANFILES = *~ .deps/* .libs/* .deps .libs 
+MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in \
+	config.log config.status configure configure.lineno stamp-h.in \
+	COPYING INSTALL config.guess config.sub install-sh missing mkinstalldirs
+maintainer-clean-local:
+	rm -rf autom4te.cache
 
-CLEANFILES=*~ .deps/* .libs/* .deps .libs
-
-if DEBUG
-DEBUGFLAGS += -g -Wall
-else
-DEBUGFLAGS += -O2 -Wall
-endif
-
-CXXFLAGS = $(DEBUGFLAGS)
-CFLAGS   = $(DEBUGFLAGS)
-LDFLAGS += 
-
-
-bin_PROGRAMS = spamass-milter
+sbin_PROGRAMS = spamass-milter
 spamass_milter_SOURCES = spamass-milter.cpp
 
