@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.50 2003/06/25 16:17:34 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.51 2003/06/26 14:45:18 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -124,9 +124,13 @@ char *strsep(char **stringp, const char *delim);
 #include "dmalloc.h"
 #endif
 
+#ifndef INADDR_LOOPBACK
+#define INADDR_LOOPBACK 0x7F000001
+#endif
+
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.50 2003/06/25 16:17:34 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.51 2003/06/26 14:45:18 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -563,8 +567,9 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 	sctx = (struct context *)malloc(sizeof(*sctx));
 	if (!hostaddr)
 	{
-		debug(D_ALWAYS, "Warning - mlfi_connect got passed a NULL hostaddr!");
-		sctx->connect_ip.s_addr = 0;
+		/* not a socket; probably a local user calling sendmail directly */
+		/* set to 127.0.0.1 */
+		sctx->connect_ip.s_addr = inet_htonl(INADDR_LOOPBACK);
 	} else
 	{
 		sctx->connect_ip = ((struct sockaddr_in *) hostaddr)->sin_addr;
