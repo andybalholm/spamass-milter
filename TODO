@@ -1,4 +1,4 @@
-$Id: TODO,v 1.5 2003/06/16 19:59:09 dnelson Exp $
+$Id: TODO,v 1.6 2003/07/02 22:28:56 dnelson Exp $
 
 *DONE* Clean up the reject/copy to spambox/deliver to recipient options:
 
@@ -14,3 +14,7 @@ $Id: TODO,v 1.5 2003/06/16 19:59:09 dnelson Exp $
 Try and expand aliases before checking for -u usernames
 
 Add exclude lists to -i (tightest match wins)
+
+Add flag to pass full username@domain to spamc
+
+Add recipient debug flag to help diagnose -u/-b/-B problems
