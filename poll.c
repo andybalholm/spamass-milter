@@ -3,6 +3,10 @@
 
 #include "subst_poll.h"
 
+/* This function pulled from Markus Gutschke's "wy60" package */
+
+/* $Id: poll.c,v 1.2 2003/03/06 21:40:49 dnelson Exp $ */
+
 int poll(struct pollfd *fds, unsigned long nfds, int timeout) {
   // This emulation function is somewhat limited. Most notably, it will never
   // report POLLERR, POLLHUP, or POLLNVAL. The calling code has to detect

@@ -1,6 +1,8 @@
 #ifndef _SUBST_POLL_H
 #define _SUBST_POLL_H
 
+/* $Id: subst_poll.h,v 1.2 2003/03/06 21:40:49 dnelson Exp $ */
+
 struct pollfd {
   int fd;
   short int events;
