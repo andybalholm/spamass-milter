@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.16 2002/11/15 07:04:16 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.17 2002/11/15 23:22:32 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -57,7 +57,7 @@
 //   7. check for the flags affected by SpamAssassin and set/change
 //      them accordingly
 //   8. replace the body with the one provided by SpamAssassin if the
-//      mail was rated spam.
+//      mail was rated spam, unless -m is specified
 //   9. free all temporary data
 //   10. tell sendmail to let the mail to go on (default) or be discarded
 //    -- wait for mail to show up -- (restart at 3)
@@ -104,7 +104,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.16 2002/11/15 07:04:16 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.17 2002/11/15 23:22:32 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -124,6 +124,7 @@ struct smfiDesc smfilter =
   };
 
 int flag_debug = 0;
+bool dontmodify = false;
 
 // {{{ main()
 
@@ -131,7 +132,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:";
+   const char *args = "p:fd:m";
    char *sock = NULL;
    bool dofork = false;
 
@@ -147,6 +148,9 @@ main(int argc, char* argv[])
 			case 'd':
 				flag_debug = atoi(optarg);
 				break;
+			case 'm':
+				dontmodify = true;
+				break;
 			case '?':
 				err = 1;
 				break;
@@ -159,6 +163,7 @@ main(int argc, char* argv[])
       cout << "Usage: spamass-milter -p socket [-f] [-d nn]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -f: fork into background" << endl;
+      cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -d nn: set debug level to nn (1-3).  Logs to syslog" << endl;
       exit(EX_USAGE);
    }
@@ -262,7 +267,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   //  However, only issue the header replacement calls if the content has
   //  actually changed. If SA didn't change subject or content-type, don't
   //  replace here unnecessarily.
-  if (assassin->spam_flag().size()>0)
+  if (!dontmodify && assassin->spam_flag().size()>0)
     {
 	  update_or_insert(assassin, ctx, assassin->subject(), &SpamAssassin::set_subject, "Subject");
 	  update_or_insert(assassin, ctx, assassin->content_type(), &SpamAssassin::set_content_type, "Content-Type");

@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.2 2002/08/18 03:09:30 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.3 2002/11/15 23:22:32 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -9,6 +9,7 @@
 .Nm
 .Fl p Pa socket
 .Op Fl f
+.Op Fl m
 .Op Fl d Ar nn
 .Sh DESCRIPTION
 The
@@ -33,6 +34,12 @@ on the parameters in
 Causes
 .Nm
 to fork into the background.
+.It Fl m
+Disables modification of the Subject: and Content-Type: headers and
+message body. This is useful when SpamAssassin is configured with
+defang_mime 0 and report_header 1, or when SA is simply used to add
+headers for postprocessing later.  Updating the body through the milter
+interface can be slow for large messages.
 .It Fl d Ar nn
 Sets the debug level:
 .Bl -tag -width "indent"
