@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.30 2003/06/03 06:36:15 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.31 2003/06/04 19:41:06 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.30 2003/06/03 06:36:15 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.31 2003/06/04 19:41:06 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -1316,7 +1316,7 @@ void parse_networklist(char *string, struct networklist *list)
 		struct in_addr net, mask;
 
 		if (list->num_nets % 10 == 0)
-			list->nets = (struct net*)realloc(list->nets, sizeof(*list->nets) * list->num_nets + 10);
+			list->nets = (struct net*)realloc(list->nets, sizeof(*list->nets) * (list->num_nets + 10));
 
 		if (!inet_aton(tnet, &net))
 		{
