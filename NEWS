@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.20 2004/03/18 00:05:10 dnelson Exp $
+$Id: NEWS,v 1.21 2004/09/07 01:12:22 dnelson Exp $
 
 unreleased:
  * -M option which disables all message modifications
@@ -7,6 +7,7 @@ unreleased:
  * -x option to expand recipient list with sendmail -bv
  * -f truly daemonizes now, instead of simply forking
  * -P option to create a pidfile
+ * Supports both Spamassassin 2.x and 3.0 X-Spam-Status: headers
 
 0.2.0: (2003-06-26)
  * -b/-B options to redirect tagged messages to another email address.
