@@ -1,4 +1,4 @@
-dnl $Id: acinclude.m4,v 1.2 2002/07/23 02:05:05 dnelson Exp $
+dnl $Id: acinclude.m4,v 1.3 2002/11/15 03:23:48 dnelson Exp $
 dnl BEGIN http://www.gnu.org/software/ac-archive/Installed_Packages/acx_pthread.html
 dnl @synopsis ACX_PTHREAD([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
 dnl
@@ -36,11 +36,13 @@ dnl (with help from M. Frigo), as well as ac_pthread and hb_pthread
 dnl macros posted by AFC to the autoconf macro repository.  We are also
 dnl grateful for the helpful feedback of numerous users.
 dnl
-dnl @version Id: acx_pthread.m4,v 1.6 2002/07/13 08:46:20 simons Exp 
+dnl @version Id: acx_pthread.m4,v 1.7 2002/09/17 13:21:15 simons Exp 
 dnl @author Steven G. Johnson <stevenj@alum.mit.edu> and Alejandro Forero Cuervo <bachue@bachue.com>
 
 AC_DEFUN([ACX_PTHREAD], [
 AC_REQUIRE([AC_CANONICAL_HOST])
+AC_LANG_SAVE
+AC_LANG_C
 acx_pthread_ok=no
 
 # We used to check for pthread.h first, but this fails if pthread.h
@@ -194,7 +196,7 @@ if test "x$acx_pthread_ok" = xyes; then
         flag=no
         case "${host_cpu}-${host_os}" in
                 *-aix* | *-freebsd*)     flag="-D_THREAD_SAFE";;
-                *solaris* | alpha*-osf*) flag="-D_REENTRANT";;
+                *solaris* | *-osf* | *-hpux*) flag="-D_REENTRANT";;
         esac
         AC_MSG_RESULT(${flag})
         if test "x$flag" != xno; then
@@ -222,7 +224,7 @@ else
         acx_pthread_ok=no
         $2
 fi
-
+AC_LANG_RESTORE
 ])dnl ACX_PTHREAD
 dnl END http://www.gnu.org/software/ac-archive/Installed_Packages/acx_pthread.html
 dnl BEGIN CF_GNU_SOURCE from lynx 2.8.5 distibution
