@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.20 2005/02/04 19:25:04 dnelson Exp $
+## $Id: Makefile.am,v 1.21 2005/02/05 07:34:11 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
@@ -8,7 +8,8 @@ CLEANFILES = *~ .deps/* .libs/* .deps .libs spamass-milter.man
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in \
 	config.log config.status configure configure.lineno stamp-h.in \
 	COPYING INSTALL config.guess config.sub install-sh missing mkinstalldirs \
-	$(distdir).tar.gz $(distdir).tar.bz2
+	${DIST_ARCHIVES} ${DIST_ARCHIVE_SIGS}
+
 maintainer-clean-local:
 	-chmod -R +w autom4te* $(distdir)
 	rm -rf autom4te* $(distdir)
@@ -22,10 +23,27 @@ dist-hook:
 		cvs2cl --no-wrap -S -U contrib/users --stdout > $(distdir)/ChangeLog ; \
 	fi
 
-.PHONY: upload changelog dist-hook
+.PHONY: sign upload changelog dist-hook
 
-upload: dist-all
-	rsync -a --progress $(distdir).tar.bz2 $(distdir).tar.gz subversions.gnu.org:/upload/spamass-milt/
+DIST_ARCHIVE_SIGS=${DIST_ARCHIVES:S/$/.sig/}
+
+# Bah. Automake does not have a dist-local hook which would let me
+# create the PGP sigs when the distfiles themselves are built.  So
+# build them just before upload.
+sign: dist-all
+	rm -f ${DIST_ARCHIVE_SIGS}
+	for file in ${DIST_ARCHIVES} ; \
+	do \
+		gpg -b -a -u 6B56A1DD -o $$file.sig $$file ; \
+	done
+
+upload: dist-all sign
+	ncftpput savannah.gnu.org incoming/savannah/spamass-milt \
+		${DIST_ARCHIVES} ${DIST_ARCHIVE_SIGS}
+
+# The good old way
+#upload: dist-all
+#	rsync -a --progress $(distdir).tar.bz2 $(distdir).tar.gz subversions.gnu.org:/upload/spamass-milt/
 
 changelog:
 	cvs2cl --no-wrap -S -U contrib/users 
@@ -51,6 +69,7 @@ EXTRA_DIST =	$(DEB_CONTRIB) \
 		$(RH_CONTRIB) \
 		$(FBSD_CONTRIB) \
 		$(MISC_CONTRIB) \
+		mdoc2man.awk \
 		spamass-milter.1.in \
 		subst_poll.h
 
