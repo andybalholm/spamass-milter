@@ -1,6 +1,6 @@
-$Id: NEWS,v 1.13 2003/06/25 16:17:34 dnelson Exp $
+$Id: NEWS,v 1.14 2003/06/26 21:57:50 dnelson Exp $
 
-unreleased
+0.2.0: (2003-06-26)
  * -b/-B options to redirect tagged messages to another email address.
  * -i option to not run spamassassin on messages coming from specified
    networks.
