@@ -1,7 +1,47 @@
 #! /bin/sh
 #
 # /usr/local/etc/rc.d script for FreeBSD
-# $Id: spamass-milter.sh,v 1.3 2003/10/24 17:36:03 dnelson Exp $
+# $Id: spamass-milter.sh,v 1.4 2004/02/09 23:03:29 dnelson Exp $
+
+# PROVIDE: spamass_milter
+# KEYWORD: FreeBSD
+
+. /usr/local/etc/rc.subr
+
+name=spamass_milter
+rcvar=`set_rcvar`
+
+command=/usr/local/sbin/spamass-milter
+
+# Override the spamass_milter_* variables in one of these files:
+#	/etc/rc.conf
+#	/etc/rc.conf.local
+#	/etc/rc.conf.d/spamass-milter
+#
+# DO NOT CHANGE THESE DEFAULT VALUES HERE
+#
+# spamass_milter_enable     YES or NO
+# spamass_milter_flags      extra flags to pass to spamass-milter
+#
+# You probably won't need to change these unless you're running as
+# non-root (see the rc.subr manpage for those flags):
+#
+# spamass_milter_pidfile    path to pidfile
+# spamass_milter_sockfile   path to milter socket
+
+# load settings
+load_rc_config $name
+
+spamass_milter_enable=${spamass_milter_enable:-NO}
+spamass_milter_pidfile=${spamass_milter_pidfile:-/var/run/spamass-milter.pid}
+spamass_milter_sockfile=${spamass_milter_sockfile:-/var/run/spamass.sock}
+pidfile=${spamass_milter_pidfile}
+spamass_milter_flags="-p $spamass_milter_sockfile -f -P $spamass_milter_pidfile $spamass_milter_flags"
+
+run_rc_command "$1"
+
+exit 1
+
 
 if ! PREFIX=$(expr $(realpath $0) : "\(/.*\)/etc/rc\.d/$(basename $0)\$"); then
     echo "$0: Cannot determine the PREFIX - aborting" >&2
