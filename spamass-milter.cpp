@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.78 2004/05/19 15:00:48 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.79 2004/06/04 02:50:47 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.78 2004/05/19 15:00:48 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.79 2004/06/04 02:50:47 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -884,7 +884,7 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 				(envelope-from $g)$.
 		   
 		*/
-		const char *macro_b, *macro_s;
+		const char *macro_b, *macro_s, *macro_j, *macro__;
 
 		/* Failure to fetch {b} is not fatal.  Without this date SA can't do
 		   future/past validation on the Date: header, but sendmail doesn't
@@ -903,13 +903,23 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 		if (!macro_s)
 			macro_s = "nohelo";
 
+		/* FQDN of this site */
+		macro_j = smfi_getsymval(ctx, "j");
+		if (!macro_j)
+			macro_j = "localhost";
+
+		/* Sending site's address */
+		macro__ = smfi_getsymval(ctx, "_");
+		if (!macro__)
+			macro__ = "unknown";
+
 		assassin->output((string)"X-Envelope-From: "+assassin->from()+"\r\n");
 		assassin->output((string)"X-Envelope-To: "+envrcpt[0]+"\r\n");
 
 		if (!macro_b)
-			assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+";\r\n");
+			assassin->output((string)"Received: from "+macro_s+" ("+macro__+") by "+macro_j+";\r\n");
 		else
-			assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+"; "+macro_b+"\r\n");
+			assassin->output((string)"Received: from "+macro_s+" ("+macro__+") by "+macro_j+"; "+macro_b+"\r\n");
 
 	} else
 		assassin->output((string)"X-Envelope-To: "+envrcpt[0]+"\r\n");
