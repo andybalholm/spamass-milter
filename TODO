@@ -1,4 +1,4 @@
-$Id: TODO,v 1.4 2003/06/10 03:03:17 dnelson Exp $
+$Id: TODO,v 1.5 2003/06/16 19:59:09 dnelson Exp $
 
 *DONE* Clean up the reject/copy to spambox/deliver to recipient options:
 
@@ -9,5 +9,8 @@ $Id: TODO,v 1.4 2003/06/10 03:03:17 dnelson Exp $
 	-b addr  N  Y  N
 	default  N  N  Y
 	-b null  N  N  N
-	
+
+
 Try and expand aliases before checking for -u usernames
+
+Add exclude lists to -i (tightest match wins)
