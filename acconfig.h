@@ -1,8 +1,3 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
-
-/* Define if you have the ANSI C header files.  */
-#undef STDC_HEADERS
-
 #undef HAVE_LC_MESSAGES
 #undef HAVE_STPCPY
 #undef PACKAGE

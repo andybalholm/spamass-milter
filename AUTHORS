@@ -1,0 +1,9 @@
+$Id: AUTHORS,v 1.1 2002/01/16 20:33:21 greve Exp $
+
+SpamAssassin Sendmail Mail Filter (Milter) Plugin 
+-------------------------------------------------
+
+Authors:
+
+	Georg C. F. Greve <greve@gnu.org>
+
