@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: spamass-milter-redhat.rc,v 1.3 2003/01/17 20:53:04 dnelson Exp $
+# $Id: spamass-milter-redhat.rc,v 1.4 2003/03/06 21:33:51 dnelson Exp $
 #
 # spamass-milter This script starts and stops the spamass-milter daemon
 #
@@ -26,7 +26,7 @@ SM_EXTRA_FLAGS=
 [ ${NETWORKING} = "no" ] && exit 0
 
 [ -x /usr/sbin/spamass-milter ] || exit 0
-PATH=$PATH:/usr/bin:/usr/local/bin
+PATH=$PATH:/usr/sbin
 
 RETVAL=0
 

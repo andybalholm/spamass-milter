@@ -1,4 +1,4 @@
-$Id: AUTHORS,v 1.4 2002/11/17 23:01:00 dnelson Exp $
+$Id: AUTHORS,v 1.5 2003/03/06 21:33:51 dnelson Exp $
 
 SpamAssassin Sendmail Mail Filter (Milter) Plugin 
 -------------------------------------------------
@@ -18,4 +18,5 @@ Bugfixes/reports contributed by:
 	Mikhail Teterin <mi@corbulon.video-collage.com>
 	Patrick Monnerat <pm@datasphere.ch>
 	Simon Josefsson <jas@extundo.com>
-	Waider <waider+savannah@waider.ie>
+	Ronan Waide <waider+savannah@waider.ie>
+	Nigel Horne <njh@bandsman.co.uk>

@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.24 2003/01/21 20:44:28 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.25 2003/03/06 21:33:47 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -104,7 +104,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.24 2003/01/21 20:44:28 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.25 2003/03/06 21:33:47 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -129,6 +129,7 @@ bool flag_sniffuser = false;
 int reject_score = -1;
 bool dontmodify = false;
 char *defaultuser;
+char *spamdhost;
 
 // {{{ main()
 
@@ -136,7 +137,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:mr:u:";
+   const char *args = "p:fd:mr:u:D:";
    char *sock = NULL;
    bool dofork = false;
 
@@ -151,6 +152,9 @@ main(int argc, char* argv[])
 				break;
 			case 'd':
 				flag_debug = atoi(optarg);
+				break;
+			case 'D':
+				spamdhost = strdup(optarg);
 				break;
 			case 'm':
 				dontmodify = true;
@@ -172,9 +176,10 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-d nn] [-f] [-m] [-r nn] [-u user]" << endl;
+      cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-m] [-r nn] [-u user]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -d nn: set debug level to nn (1-3).  Logs to syslog" << endl;
+      cout << "   -D host: connect to spand at remote host" << endl;
       cout << "   -f: fork into background" << endl;
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n" 
@@ -765,6 +770,11 @@ void SpamAssassin::Connect()
           // There is only 1 recipient so we pass the username to SPAMC 
           argv[argc++] = (char *) local_user().c_str(); 
         }
+      }
+      if (spamdhost) 
+      {
+        argv[argc++] = "-d";
+        argv[argc++] = spamdhost;
       }
       argv[argc++] = 0;
 #endif
