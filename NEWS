@@ -1,7 +1,7 @@
-$Id: NEWS,v 1.15 2003/06/26 22:13:08 dnelson Exp $
+$Id: NEWS,v 1.16 2003/07/31 19:13:02 dnelson Exp $
 
 unreleased:
- * nothing yet
+ * -M option which disables all message modifications
 
 0.2.0: (2003-06-26)
  * -b/-B options to redirect tagged messages to another email address.

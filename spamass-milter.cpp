@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.57 2003/07/22 01:10:06 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.58 2003/07/31 19:13:02 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -131,7 +131,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.57 2003/07/22 01:10:06 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.58 2003/07/31 19:13:02 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -158,7 +158,8 @@ const char *const debugstrings[] = {
 int flag_debug = (1<<D_ALWAYS);
 bool flag_reject = false;
 int reject_score = -1;
-bool dontmodify = false;
+bool dontmodifyspam = false;    // Don't modify/add body or spam results headers
+bool dontmodify = false;        // Don't add SA headers, ever.
 bool flag_sniffuser = false;
 char *defaultuser;
 char *spamdhost;
@@ -175,7 +176,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:mr:u:D:i:b:B:";
+   const char *args = "p:fd:mMr:u:D:i:b:B:";
    char *sock = NULL;
    bool dofork = false;
 
@@ -201,8 +202,13 @@ main(int argc, char* argv[])
 				parse_networklist(optarg, &ignorenets);
 				break;
 			case 'm':
+				dontmodifyspam = true;
+				smfilter.xxfi_flags &= ~SMFIF_CHGBODY;
+				break;
+			case 'M':
 				dontmodify = true;
-				// smfilter.xxfi_flags &= ~SMFIF_CHGBODY;
+				dontmodifyspam = true;
+				smfilter.xxfi_flags &= ~(SMFIF_CHGBODY|SMFIF_CHGHDRS);
 				break;
 			case 'r':
 				flag_reject = true;
@@ -246,8 +252,9 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-i networks] [-m]" << endl;
-      cout << "                      [-r nn] [-u defaultuser] [-b|-B bucket ] [-- spamc args ]" << endl;
+      cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-D host] [-f]" << endl;
+      cout << "                      [-i networks] [-m] [-M] [-r nn] [-u defaultuser]" << endl;
+      cout << "                      [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
       cout << "          recipient(s) will not receive anything." << endl;
@@ -258,6 +265,7 @@ main(int argc, char* argv[])
       cout << "   -i: skip (ignore) checks from these IPs or netblocks" << endl;
       cout << "       example: -i 192.168.12.5,10.0.0.0/8,172.16/255.255.0.0" << endl;
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
+      cout << "   -M: don't modify the message at all" << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n"
               "          use -1 to reject any messages tagged by SA." << endl;
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
@@ -355,8 +363,11 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   if (bob == string::npos)
   	bob = assassin->d().size();
 
-  update_or_insert(assassin, ctx, assassin->spam_flag(), &SpamAssassin::set_spam_flag, "X-Spam-Flag");
-  update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
+  if (!dontmodify)
+  {
+    update_or_insert(assassin, ctx, assassin->spam_flag(), &SpamAssassin::set_spam_flag, "X-Spam-Flag");
+    update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
+  }
 
   /* Summarily reject the message if SA tagged it, or if we have a minimum
      score, reject if it exceeds that score. */
@@ -414,10 +425,13 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
         }
   }
 
-  update_or_insert(assassin, ctx, assassin->spam_report(), &SpamAssassin::set_spam_report, "X-Spam-Report");
-  update_or_insert(assassin, ctx, assassin->spam_prev_content_type(), &SpamAssassin::set_spam_prev_content_type, "X-Spam-Prev-Content-Type");
-  update_or_insert(assassin, ctx, assassin->spam_level(), &SpamAssassin::set_spam_level, "X-Spam-Level");
-  update_or_insert(assassin, ctx, assassin->spam_checker_version(), &SpamAssassin::set_spam_checker_version, "X-Spam-Checker-Version");
+  if (!dontmodify)
+  {
+    update_or_insert(assassin, ctx, assassin->spam_report(), &SpamAssassin::set_spam_report, "X-Spam-Report");
+    update_or_insert(assassin, ctx, assassin->spam_prev_content_type(), &SpamAssassin::set_spam_prev_content_type, "X-Spam-Prev-Content-Type");
+    update_or_insert(assassin, ctx, assassin->spam_level(), &SpamAssassin::set_spam_level, "X-Spam-Level");
+    update_or_insert(assassin, ctx, assassin->spam_checker_version(), &SpamAssassin::set_spam_checker_version, "X-Spam-Checker-Version");
+  }
 
   // 
   // If SpamAssassin thinks it is spam, replace
@@ -428,7 +442,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   //  However, only issue the header replacement calls if the content has
   //  actually changed. If SA didn't change subject or content-type, don't
   //  replace here unnecessarily.
-  if (!dontmodify && assassin->spam_flag().size()>0)
+  if (!dontmodifyspam && assassin->spam_flag().size()>0)
     {
 	  update_or_insert(assassin, ctx, assassin->subject(), &SpamAssassin::set_subject, "Subject");
 	  update_or_insert(assassin, ctx, assassin->content_type(), &SpamAssassin::set_content_type, "Content-Type");
