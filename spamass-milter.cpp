@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.34 2003/06/06 16:05:08 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.35 2003/06/06 16:10:29 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.34 2003/06/06 16:05:08 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.35 2003/06/06 16:10:29 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -414,9 +414,10 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 	{
 		debug(D_NET, "%s is in our ignore list - accepting message",
 		    inet_ntoa(((struct sockaddr_in *) hostaddr)->sin_addr));
-		debug(D_FUNC, "mlfi_connect: exit");
+		debug(D_FUNC, "mlfi_connect: exit ignore");
 		return SMFIS_ACCEPT;
 	}
+	
 	// Tell Milter to continue
 	debug(D_FUNC, "mlfi_connect: exit");
 
@@ -560,7 +561,7 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
-      debug(D_FUNC, "mlfi_header: exit");
+      debug(D_FUNC, "mlfi_header: exit error");
       return SMFIS_TEMPFAIL;
     };
   
@@ -605,7 +606,7 @@ mlfi_eoh(SMFICTX* ctx)
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
   
-      debug(D_FUNC, "mlfi_eoh: exit");
+      debug(D_FUNC, "mlfi_eoh: exit error");
       return SMFIS_TEMPFAIL;
     };
   
@@ -633,7 +634,7 @@ mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
-      debug(D_FUNC, "mlfi_body: exit");
+      debug(D_FUNC, "mlfi_body: exit error");
       return SMFIS_TEMPFAIL;
     };
 
@@ -675,7 +676,7 @@ mlfi_eom(SMFICTX* ctx)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
-      debug(D_FUNC, "mlfi_eom: exit");
+      debug(D_FUNC, "mlfi_eom: exit error");
       return SMFIS_TEMPFAIL;
     };
   
@@ -918,7 +919,7 @@ SpamAssassin::output(const void* buffer, long size)
 			break;
 	      default:
 			total += wsize;
-			debug(D_POLL, "wrote %d bytes");
+			debug(D_POLL, "wrote %ld bytes", wsize);
 			break;
 		}
 	}
