@@ -1,17 +1,19 @@
-$Id: NEWS,v 1.12 2003/06/11 20:18:39 dnelson Exp $
+$Id: NEWS,v 1.13 2003/06/25 16:17:34 dnelson Exp $
 
 unreleased
- * -b option to redirect tagged messages to another email address.
- * -i option to not run spamassassin on messages coming from internal
+ * -b/-B options to redirect tagged messages to another email address.
+ * -i option to not run spamassassin on messages coming from specified
    networks.
- * All arguments after -- get passed to spamc (deprecate -D at the same
-   time).
+ * All arguments after -- wil get passed to spamc (deprecate -D at the
+   same time).
  * Envelope, remote IP, HELO, and date get sent to spamc, so the
    results more closely match what spamc via procmail sees.  A lot of
    SA rules could never fire because this data was missing. You will
    need to add a line to your sendmail config file to enable date
    passing (see README).
  * A compatible manpage is generated on systems without mdoc macros.
+ * Incoming messages with absolutely no headers at all now get checked
+   correctly
 
 0.1.3a: (2002-12-31)
  * Fixed hanging problem when processing a message with no headers at

@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.49 2003/06/25 15:15:50 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.50 2003/06/25 16:17:34 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -126,7 +126,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.49 2003/06/25 15:15:50 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.50 2003/06/25 16:17:34 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -244,6 +244,9 @@ main(int argc, char* argv[])
       cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-i networks] [-m]" << endl;
       cout << "                      [-r nn] [-u defaultuser] [-b|-B bucket ] [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
+      cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
+      cout << "          recipient(s) will not receive anything." << endl;
+      cout << "   -B bucket: add this mail address as a BCC recipient of spam." << endl;
       cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
       cout << "   -D host: connect to spand at remote host (deprecated)" << endl;
       cout << "   -f: fork into background" << endl;
@@ -254,9 +257,6 @@ main(int argc, char* argv[])
               "          use -1 to reject any messages tagged by SA." << endl;
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
               "          Uses 'defaultuser' if there are multiple recipients." << endl;
-      cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
-      cout << "          recipient(s) will not receive anything." << endl;
-      cout << "   -B bucket: add this mail address as a BCC recipient of spam." << endl;
       cout << "   -- spamc args: pass the remaining flags to spamc." << endl;
               
       exit(EX_USAGE);
