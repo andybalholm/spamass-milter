@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.21 2002/12/31 19:34:48 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.22 2002/12/31 20:03:13 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -104,7 +104,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.21 2002/12/31 19:34:48 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.22 2002/12/31 20:03:13 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -532,6 +532,19 @@ mlfi_eoh(SMFICTX* ctx)
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
 
   debug(1, "mlfi_eoh: enter");
+
+  // Check if the SPAMC program has already been run, if not we run it.
+  if ( !(assassin->connected) )
+     {
+       try {
+         assassin->connected = 1; // SPAMC is getting ready to run
+         assassin->Connect();
+       } 
+       catch (string& problem) {
+         throw_error(problem);
+         return SMFIS_TEMPFAIL;
+       };
+     }
 
   try {
     // add blank line between header and body
