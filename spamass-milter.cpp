@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.44 2003/06/10 04:57:40 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.45 2003/06/11 20:17:26 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -118,7 +118,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.44 2003/06/10 04:57:40 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.45 2003/06/11 20:17:26 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -126,7 +126,7 @@ struct smfiDesc smfilter =
     SMFI_VERSION,   // version code -- leave untouched
     SMFIF_ADDHDRS|SMFIF_CHGHDRS|SMFIF_CHGBODY,  // flags
     mlfi_connect, // info filter callback
-    NULL, // HELO filter callback
+    mlfi_helo, // HELO filter callback
     mlfi_envfrom, // envelope sender filter callback
     mlfi_envrcpt, // envelope recipient filter callback
     mlfi_header, // header filter callback
@@ -555,6 +555,7 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 	sctx = (struct context *)malloc(sizeof(*sctx));
 	sctx->connect_ip = ((struct sockaddr_in *) hostaddr)->sin_addr;
 	sctx->assassin = NULL;
+	sctx->helo = NULL;
 	
 	/* store a pointer to it with setpriv */
 	smfi_setpriv(ctx, sctx);
@@ -573,6 +574,20 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 	return SMFIS_CONTINUE;
 }
 
+//
+// Gets called on every "HELO"
+//
+// stores the result in the context structure
+//
+sfsistat mlfi_helo(SMFICTX * ctx, char * helohost)
+{
+	struct context *sctx = (struct context*)smfi_getpriv(ctx);
+	if (sctx->helo)
+		free(sctx->helo);
+	sctx->helo = strdup(helohost);
+
+	return SMFIS_CONTINUE;
+}
 
 //
 // Gets called first for all messages
@@ -585,6 +600,7 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 {
   SpamAssassin* assassin;
   struct context *sctx = (struct context *)smfi_getpriv(ctx);
+  char *queueid;
 
   debug(D_FUNC, "mlfi_envfrom: enter");
   try {
@@ -603,6 +619,13 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 
   // remember the MAIL FROM address
   assassin->set_from(string(envfrom[0]));
+  
+  queueid=smfi_getsymval(ctx,"i");
+  if (!queueid)
+    queueid="unk";
+  assassin->queueid=string(queueid);
+
+  debug(D_MISC, "queueid=%s", queueid);
 
   // tell Milter to continue
   debug(D_FUNC, "mlfi_envfrom: exit");
@@ -619,7 +642,8 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 sfsistat
 mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 {
-	SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
+	struct context *sctx = (struct context*)smfi_getpriv(ctx);
+	SpamAssassin* assassin = sctx->assassin;
 	char **rcpt;
 
 	if (assassin->numrcpt() == 0)
@@ -636,21 +660,42 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 
 				/* Send the envelope headers as X-Envelope-From: and
 				   X-Envelope-To: so that SpamAssassin can use them in its
-				   whitelist checks.  Also forge a dummy Received: header
-				   because SA gets the connecting IP from the topmost one
+				   whitelist checks.  Also forge as complete a dummy
+				   Received: header as possible because SA gets a lot of
+				   info from it.
+				   
+					HReceived: $?sfrom $s $.$?_($?s$|from $.$_)
+						$.$?{auth_type}(authenticated$?{auth_ssf} bits=${auth_ssf}$.)
+						$.by $j ($v/$Z)$?r with $r$. id $i$?{tls_version}
+						(version=${tls_version} cipher=${cipher} bits=${cipher_bits} verify=${verify})$.$?u
+						for $u; $|;
+						$.$b$?g
+						(envelope-from $g)$.
+				   
 				*/
-				char *now;
+				const char *macro_b, *macro_s;
 
-				/* If the user did not enable the b macro in sendmail.cf
+				/* If the user did not enable the {b} macro in sendmail.cf
 				   just make it blank. Without this date SA can't do
 				   future/past validation on the Date: header */
-				now = smfi_getsymval(ctx, "b");
-				if (!now)
-					now="";
+				macro_b = smfi_getsymval(ctx, "b");
+				if (!macro_b)
+					macro_b = "";
+					
+				/* Sendmail currently cannot pass us the {s} macro, but
+				   I do not know why.  Leave this in for the day sendmail is
+				   fixed.  Until that day, use the value remembered by
+				   mlfi_helo()
+				*/
+				macro_s = smfi_getsymval(ctx, "s");
+				if (!macro_s)
+					macro_s = sctx->helo;
+				if (!macro_s)
+					macro_s = "nohelo";
 
-				assassin->output("X-Envelope-From: "+assassin->from()+"\r\n");
-				assassin->output("X-Envelope-To: "+assassin->rcpt()+"\r\n");
-				assassin->output("Received: from ["+assassin->connectip()+"] by "+smfi_getsymval(ctx,"j")+"; "+now+"\r\n");
+				assassin->output((string)"X-Envelope-From: "+assassin->from()+"\r\n");
+				assassin->output((string)"X-Envelope-To: "+assassin->rcpt()+"\r\n");
+				assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+"; "+macro_b+"\r\n");
 			} 
 			catch (string& problem) {
 				throw_error(problem);
@@ -686,7 +731,6 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
 {
   SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
   debug(D_FUNC, "mlfi_header: enter");
-
 
   // Is it a "X-Spam-" header field?
   if ( cmp_nocase_partial(string("X-Spam-"), string(headerf)) == 0 )
@@ -879,6 +923,8 @@ mlfi_close(SMFICTX* ctx)
   	debug(D_ALWAYS, "NULL context in mlfi_close! Should not happen!");
     return SMFIS_ACCEPT;
   }
+  if (sctx->helo)
+  	free(sctx->helo);
   free(sctx);
   smfi_setpriv(ctx, NULL);
   
@@ -1507,14 +1553,14 @@ void parse_debuglevel(char* string)
    Output a line to syslog using print format, but only if the appropriate
    debug level is set.  The D_ALWAYS level is always enabled.
 */
-void debug(enum debuglevel level, const char* string, ...)
+void debug(enum debuglevel level, const char* fmt, ...)
 {
 	if ((1<<level) & flag_debug)
 	{
 #if defined(HAVE_VSYSLOG)
-	    va_list vl;
-	    va_start(vl, string);
-		vsyslog(LOG_ERR, string, vl);
+		va_list vl;
+		va_start(vl, fmt);
+		vsyslog(LOG_ERR, fmt, vl);
 		va_end(vl);
 #else
 #if defined(HAVE_VASPRINTF)
@@ -1522,22 +1568,22 @@ void debug(enum debuglevel level, const char* string, ...)
 #else
 		char buf[1024];
 #endif
-	    va_list vl;
-	    va_start(vl, string);
+		va_list vl;
+		va_start(vl, fmt);
 #if defined(HAVE_VASPRINTF)
-	    vasprintf(&buf, string, vl);
+		vasprintf(&buf, fmt, vl);
 #else
 #if defined(HAVE_VSNPRINTF)
-	    vsnprintf(buf, sizeof(buf)-1, string, vl);
+		vsnprintf(buf, sizeof(buf)-1, fmt, vl);
 #else
 		/* XXX possible buffer overflow here; be careful what you pass to debug() */
-		vsprintf(buf, string, vl);
+		vsprintf(buf, fmt, vl);
 #endif
 #endif
-	    va_end(vl);
+		va_end(vl);
 		syslog(LOG_ERR, "%s", buf);
 #if defined(HAVE_VASPRINTF)
-	    free(buf);
+		free(buf);
 #endif 
 #endif /* vsyslog */
 	}

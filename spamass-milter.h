@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.14 2003/06/09 17:19:25 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.15 2003/06/11 20:17:26 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -32,6 +32,7 @@ using namespace std;
 string retrieve_field(const string&, const string&);
 
 sfsistat mlfi_connect(SMFICTX*, char*, _SOCK_ADDR*);
+sfsistat mlfi_helo(SMFICTX*, char*);
 sfsistat mlfi_envrcpt(SMFICTX*, char**);
 sfsistat mlfi_envfrom(SMFICTX*, char**);
 sfsistat mlfi_header(SMFICTX*, char*, char*);
@@ -135,6 +136,9 @@ public:
   // The list of recipients for the current message
   list <string> recipients;
 
+  // the sendmail queue id for this message; used for logging
+  string queueid;
+
   // Process handling variables
   pid_t pid;
   int pipe_io[2][2];
@@ -144,6 +148,7 @@ public:
 struct context
 {
 	struct in_addr connect_ip;	// remote IP address
+	char *helo;
 	SpamAssassin *assassin; // pointer to the SA object if we're processing a message
 };
 
@@ -154,7 +159,7 @@ typedef string::size_type (SpamAssassin::*t_setter)(const string &val);
 int assassinate(SMFICTX*, SpamAssassin*);
 
 void throw_error(const string&);
-void debug(enum debuglevel, const char* string, ...); /* __printflike(2, 3); */
+void debug(enum debuglevel, const char* fmt, ...); /* __printflike(2, 3); */
 string::size_type find_nocase(const string&, const string&, string::size_type = 0);
 int cmp_nocase_partial(const string&, const string&);
 void closeall(int fd);
