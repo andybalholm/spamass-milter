@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.16 2003/06/12 22:41:34 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.17 2003/06/14 19:17:41 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -116,11 +116,14 @@ public:
   // flags
   bool error;
   bool running;
-  bool connected;
+  bool connected;	/* are we connected to spamc? */
 
   // This is where we store the mail after it
   // was piped through SpamAssassin
   string mail;
+
+  // Data written via output() but before Connect() is stored here
+  string outputbuffer;
 
   // Variables for SpamAssassin influenced fields
   string x_spam_status, x_spam_flag, x_spam_report, x_spam_prev_content_type;
