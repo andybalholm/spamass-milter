@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.12 2002/07/23 03:48:09 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.13 2002/08/14 16:15:10 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -309,8 +309,8 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 
       // Subject header //
       // find it:
-      oldstring = retrieve_field(assassin->d().substr(0, eoh), string("Subject"));
-      newstring = assassin->subject();
+      newstring = retrieve_field(assassin->d().substr(0, eoh), string("Subject"));
+      oldstring = assassin->subject();
 
       old = assassin->set_subject(oldstring);
       
@@ -325,8 +325,8 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 
       // Content-Type header //
       // find it:
-      oldstring = retrieve_field(assassin->d().substr(0, eoh), string("Content-Type"));
-      newstring = assassin->content_type();
+      newstring = retrieve_field(assassin->d().substr(0, eoh), string("Content-Type"));
+      oldstring = assassin->content_type();
 
       old = assassin->set_content_type(oldstring);
       
