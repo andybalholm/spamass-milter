@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.20 2002/12/23 17:08:30 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.21 2002/12/31 19:34:48 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -104,7 +104,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.20 2002/12/23 17:08:30 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.21 2002/12/31 19:34:48 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -807,12 +807,12 @@ SpamAssassin::output(const void* buffer, long size)
 	fds[1].fd = pipe_io[1][0];
 	fds[1].events = POLLIN;
 
-	debug(2, "polling");
+	debug(2, "polling fds %d and %d", pipe_io[0][1], pipe_io[1][0]);
 	nready = poll(fds, nfds, 1000);
 	if (nready == -1)
 		throw("poll failed");
 
-	debug(2, "poll returned %d", nready);
+	debug(2, "poll returned %d, fd0=%d, fd1=%d", nready, fds[0].revents, fds[1].revents);
 
 	if (fds[1].revents & POLLIN)
 	{
