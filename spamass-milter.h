@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.19 2003/08/13 03:47:56 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.20 2003/08/28 14:59:17 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -99,13 +99,14 @@ public:
   string& spam_level();
   string& content_type();
   string& subject();
-  string& rcpt();
-  string& from();
-  string& connectip();
-  string  local_user();
-  int     numrcpt();
-  int     set_numrcpt();
-  int     set_numrcpt(const int);
+  string& rcpt();		/* first RCPT TO: recipient (raw) */
+  string& from();		/* MAIL FROM: sender (raw) */
+  string& connectip();	/* IP of sending machine */
+  string  local_user();	/* username part of first expanded recipient */
+  string  full_user();	/* full first expanded recipient */
+  int     numrcpt();	/* total RCPT TO: recpients */
+  int     set_numrcpt();	/* increment total RCPT count */
+  int     set_numrcpt(const int);	/* set total RCPT count to n */
   string::size_type set_spam_status(const string&);
   string::size_type set_spam_flag(const string&);
   string::size_type set_spam_report(const string&);
@@ -148,6 +149,9 @@ public:
 
   // The list of recipients for the current message
   list <string> recipients;
+
+  // List of recipients after alias/virtusertable expansion
+  list <string> expandedrcpt;
 
   // the sendmail queue id for this message; used for logging
   string queueid;

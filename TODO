@@ -1,8 +1,8 @@
-$Id: TODO,v 1.8 2003/07/09 17:58:04 dnelson Exp $
+$Id: TODO,v 1.9 2003/08/28 14:59:17 dnelson Exp $
 
-*DONE* Clean up the reject/copy to spambox/deliver to recipient options:
+*DONE* Clean up the Reject/Copy to spambox/Deliver to recipient options:
 
-	         R  C  P
+	         R  C  D
 	
 	-r       Y  -  -
 	-B addr  N  Y  Y
@@ -10,14 +10,15 @@ $Id: TODO,v 1.8 2003/07/09 17:58:04 dnelson Exp $
 	default  N  N  Y
 	-b null  N  N  N
 
+        "null" being a mail alias to /dev/null
 
-Try and expand aliases before checking for -u usernames; sendmail -bv
+*DONE* Try and expand aliases before checking for -u usernames; sendmail -bv
 
 Add exclude lists to -i (tightest match wins)
 
-Add flag to pass full username@domain to spamc
+*DONE* Add flag to pass full username@domain to spamc
 
-Add recipient debug flag to help diagnose -u/-b/-B problems
+*DONE* Add recipient debug flag to help diagnose -u/-b/-B problems
 
 Allow customized reject message with -r.  
 Option 1 - new flag.  -R "go away"

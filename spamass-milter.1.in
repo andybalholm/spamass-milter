@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.16 2003/08/11 21:36:32 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.17 2003/08/28 14:59:17 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -11,6 +11,7 @@
 .Op Fl b Ns | Ns Fl B Ar spamaddress
 .Op Fl d Ar debugflags
 .Op Fl D Ar host
+.Op Fl e
 .Op Fl f
 .Op Fl i Ar networks
 .Op Fl m
@@ -87,6 +88,15 @@ instead of using one on localhost.
 This option is deprecated; use 
 .Fl - Fl d Ar host 
 instead.
+.It Fl e
+Pass the full user@host address to spamc.
+The default is to pass only the username part on the assumption that
+all users are local.
+This flag is useful if you are using an SQL (or other username) backend
+with spamassassin and have listed the full address there.
+Requires the
+.Fl u
+flag.
 .It Fl f
 Causes
 .Nm

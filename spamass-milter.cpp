@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.64 2003/08/13 03:47:56 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.65 2003/08/28 14:59:17 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -131,7 +131,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.64 2003/08/13 03:47:56 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.65 2003/08/28 14:59:17 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -169,6 +169,7 @@ char **spamc_argv;
 bool flag_bucket = false;
 bool flag_bucket_only = false;
 char *spambucket;
+bool flag_full_email = false;		/* pass full email address to spamc */
 
 // {{{ main()
 
@@ -176,7 +177,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:mMr:u:D:i:b:B:";
+   const char *args = "p:fd:mMr:u:D:i:b:B:e";
    char *sock = NULL;
    bool dofork = false;
 
@@ -196,6 +197,9 @@ main(int argc, char* argv[])
 				break;
 			case 'D':
 				spamdhost = strdup(optarg);
+				break;
+			case 'e':
+				flag_full_email = true;
 				break;
 			case 'i':
 				debug(D_MISC, "Parsing ignore list");
@@ -245,6 +249,12 @@ main(int argc, char* argv[])
 		}
 	}
 
+   if (flag_full_email && !flag_sniffuser)
+   {
+   	  fprintf(stderr, "-e flag requires -u\n");
+      err=1;
+   }
+
    /* remember the remainer of the arguments so we can pass them to spamc */
    spamc_argc = argc - optind;
    spamc_argv = argv + optind;
@@ -252,7 +262,7 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-D host] [-f]" << endl;
+      cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-e] [-D host] [-f]" << endl;
       cout << "                      [-i networks] [-m] [-M] [-r nn] [-u defaultuser]" << endl;
       cout << "                      [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
@@ -261,6 +271,7 @@ main(int argc, char* argv[])
       cout << "   -B bucket: add this mail address as a BCC recipient of spam." << endl;
       cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
       cout << "   -D host: connect to spamd at remote host (deprecated)" << endl;
+      cout << "   -e: pass full email address to spamc instead of just username" << endl;
       cout << "   -f: fork into background" << endl;
       cout << "   -i: skip (ignore) checks from these IPs or netblocks" << endl;
       cout << "       example: -i 192.168.12.5,10.0.0.0/8,172.16/255.255.0.0" << endl;
@@ -681,7 +692,6 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	SpamAssassin* assassin = sctx->assassin;
 	FILE *p;
 	char buf[1024];
-	list <string> newrecipients;
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
 
@@ -696,27 +706,31 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	{
 		while (fgets(buf, sizeof(buf), p) != NULL)
 		{
-			int i=strlen(buf);
+			int i = strlen(buf);
+			/* strip trailing EOLs */
 			while (i > 0 && buf[i - 1] <= ' ')
 				i--;
 			buf[i] = '\0';
 			debug(D_RCPT, "sendmail output: %s", buf);
+			/*	From a quick scan of the sendmail source, a valid email
+				address gets printed via either
+				    "deliverable: mailer %s, host %s, user %s"
+				or  "deliverable: mailer %s, user %s"
+			*/
 			if (strstr(buf, "... deliverable: mailer "))
 			{
 				char *p=strstr(buf,", user ");
+				/* anything after ", user " is the email address */
 				debug(D_RCPT, "user: %s", p+7);
-				newrecipients.push_back(p+7);
+				assassin->expandedrcpt.push_back(p+7);
 			}
 		}
 	}
-	debug(D_RCPT, "Expanded to %d recipients", (int)newrecipients.size());
-	pclose(p);
+	debug(D_RCPT, "Total of %d actual recipients", (int)assassin->expandedrcpt.size());
+	pclose(p); p = NULL;
 
 	if (assassin->numrcpt() == 0)
 	{
-		assassin->set_numrcpt(1);
-		assassin->set_rcpt(string(envrcpt[0]));
-
 		/* Send the envelope headers as X-Envelope-From: and
 		   X-Envelope-To: so that SpamAssassin can use them in its
 		   whitelist checks.  Also forge as complete a dummy
@@ -756,9 +770,17 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 		assassin->output((string)"X-Envelope-To: "+assassin->rcpt()+"\r\n");
 		assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+"; "+macro_b+"\r\n");
 
-	} else
+	}
+
+	/* increment RCPT TO: count */
+	assassin->set_numrcpt();
+
+	/* If we expanded to at least one user and we haven't recorded one yet,
+	   record the first one */
+	if (!assassin->expandedrcpt.empty() && (assassin->rcpt().size() == 0))
 	{
-		assassin->set_numrcpt();
+		debug(D_RCPT, "remembering %s for spamc", assassin->expandedrcpt.front().c_str());
+		assassin->set_rcpt(assassin->expandedrcpt.front());
 	}
 
 	debug(D_RCPT, "remembering recipient %s", envrcpt[0]);
@@ -1070,6 +1092,11 @@ SpamAssassin::~SpamAssassin()
 	{
 		recipients.pop_front();
 	}
+	// Clean up the recip list. Might be overkill, but it's good housekeeping.
+	while( !expandedrcpt.empty()) 
+	{
+		expandedrcpt.pop_front();
+	}
 }
 
 //
@@ -1084,7 +1111,7 @@ void SpamAssassin::Connect()
     throw string(string("pipe error: ")+string(strerror(errno)));
   if (pipe(pipe_io[1]))
     throw string(string("pipe error: ")+string(strerror(errno)));
-  
+
   // now execute SpamAssassin client for contact with SpamAssassin spamd
 
   // start child process
@@ -1118,19 +1145,25 @@ void SpamAssassin::Connect()
       if (flag_sniffuser) 
       {
         argv[argc++] = "-u";
-        if ( numrcpt() != 1 )
+        if ( expandedrcpt.size() != 1 )
         {
           // More (or less?) than one recipient, so we pass the default
           // username to SPAMC.  This way special rules can be defined for
           // multi recipient messages.
+          debug(D_RCPT, "%d recipients; spamc gets default username %s", (int)expandedrcpt.size(), defaultuser);
           argv[argc++] = defaultuser; 
         } else
         { 
           // There is only 1 recipient so we pass the username
           // (converted to lowercase) to SPAMC.  Don't worry about 
           // freeing this memory as we're exec()ing anyhow.
-          argv[argc] = strlwr(strdup(local_user().c_str())); 
-          
+          if (flag_full_email)
+            argv[argc] = strlwr(strdup(full_user().c_str())); 
+          else
+            argv[argc] = strlwr(strdup(local_user().c_str())); 
+
+          debug(D_RCPT, "spamc gets %s", argv[argc]);
+         
           argc++;
         }
       }
@@ -1410,7 +1443,21 @@ SpamAssassin::local_user()
 {
   // assuming we have a recipient in the form: <username@somehost.somedomain>
   // we return 'username'
-  return _rcpt.substr(1,_rcpt.find('@')-1);
+  if (_rcpt[0]=='<')
+    return _rcpt.substr(1,_rcpt.find('@')-1);
+  else
+  	return _rcpt;
+}
+
+string
+SpamAssassin::full_user()
+{
+  // assuming we have a recipient in the form: <username@somehost.somedomain>
+  // we return 'username@somehost.somedomain'
+  if (_rcpt[0]=='<')
+    return _rcpt.substr(1,_rcpt.find('>')-1);
+  else
+  	return _rcpt;
 }
 
 int
