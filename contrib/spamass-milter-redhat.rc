@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: spamass-milter-redhat.rc,v 1.1 2002/07/24 16:19:53 dnelson Exp $
+# $Id: spamass-milter-redhat.rc,v 1.2 2002/08/19 20:39:42 dnelson Exp $
 #
 # spamass-milter This script starts and stops the spamass-milter daemon
 #
@@ -28,34 +28,52 @@ SM_EXTRA_FLAGS=
 [ -x /usr/sbin/spamass-milter ] || exit 0
 PATH=$PATH:/usr/bin:/usr/local/bin
 
+RETVAL=0
+
+start() {
+        echo -n "Starting spamass-milter: "
+        daemon spamass-milter -p ${SM_SOCKET} -f ${SM_EXTRA_FLAGS}
+        RETVAL=$?
+        echo
+	test $RETVAL -eq 0 && touch /var/lock/subsys/spamass-milter
+	return $RETVAL
+}
+
+stop() {
+        echo -n "Shutting down spamass-milter: "
+        killproc spamass-milter
+        RETVAL=$?
+        echo
+	test $RETVAL -eq 0 && rm -f /var/lock/subsys/spamass-milter
+}
+
+restart() {
+	stop
+	start
+}
+
 # See how we were called.
 case "$1" in
   start)
         # Start daemon.
-        echo -n "Starting spamass-milter: "
-        daemon spamass-milter -p ${SM_SOCKET} -f ${SM_EXTRA_FLAGS}
-        RETVAL=$?
-        touch /var/lock/subsys/spamass-milter
-        echo
+	start
         ;;
   stop)
-        # Stop daemons.
-        echo -n "Shutting down spamass-milter: "
-        killproc spamass-milter
-        RETVAL=$?
-        rm -f /var/lock/subsys/spamass-milter
-        echo
+        # Stop daemon.
+	stop
         ;;
-  restart)
-        $0 stop
-        $0 start
+  restart|reload)
+	restart
+        ;;
+  condrestart)
+	test -f /var/lock/subsys/spamass-milter && $0 restart || :
         ;;
   status)
         status spamass-milter
         ;;
   *)
-        echo "Usage: $0 {start|stop|restart|status}"
+        echo "Usage: $0 {start|stop|reload|restart|condrestart|status}"
         exit 1
 esac
 
-exit 0
+exit $?
