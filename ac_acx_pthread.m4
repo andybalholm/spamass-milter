@@ -1,5 +1,5 @@
 dnl BEGIN http://www.gnu.org/software/ac-archive/htmldoc/acx_pthread.html
-dnl $Id: ac_acx_pthread.m4,v 1.1 2003/06/07 02:56:50 dnelson Exp $
+dnl $Id: ac_acx_pthread.m4,v 1.2 2003/08/13 03:33:50 dnelson Exp $
 dnl @synopsis ACX_PTHREAD([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
 dnl
 dnl This macro figures out how to build C programs using POSIX
@@ -36,7 +36,7 @@ dnl (with help from M. Frigo), as well as ac_pthread and hb_pthread
 dnl macros posted by AFC to the autoconf macro repository.  We are also
 dnl grateful for the helpful feedback of numerous users.
 dnl
-dnl @version Id: acx_pthread.m4,v 1.7 2002/09/17 13:21:15 simons Exp 
+dnl @version Id: acx_pthread.m4,v 1.8 2003/05/21
 dnl @author Steven G. Johnson <stevenj@alum.mit.edu> and Alejandro Forero Cuervo <bachue@bachue.com>
 
 AC_DEFUN([ACX_PTHREAD], [
