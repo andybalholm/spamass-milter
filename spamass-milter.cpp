@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.77 2004/05/13 21:43:53 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.78 2004/05/19 15:00:48 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.77 2004/05/13 21:43:53 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.78 2004/05/19 15:00:48 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -362,8 +362,8 @@ main(int argc, char* argv[])
 /* Update a header if SA changes it, or add it if it is new. */
 void update_or_insert(SpamAssassin* assassin, SMFICTX* ctx, string oldstring, t_setter setter, char *header )
 {
-	string::size_type eoh1(assassin->d().find("\n\n"));
-	string::size_type eoh2(assassin->d().find("\n\r\n"));
+	string::size_type eoh1 = assassin->d().find("\n\n");
+	string::size_type eoh2 = assassin->d().find("\n\r\n");
 	string::size_type eoh = ( eoh1 < eoh2 ? eoh1 : eoh2 );
 
 	string newstring;
@@ -372,7 +372,7 @@ void update_or_insert(SpamAssassin* assassin, SMFICTX* ctx, string oldstring, t_
 	debug(D_UORI, "u_or_i: looking at <%s>", header);
 	debug(D_UORI, "u_or_i: oldstring: <%s>", oldstring.c_str());
 
-	newstring = retrieve_field(assassin->d().substr(0, eoh), string(header));
+	newstring = retrieve_field(assassin->d().substr(0, eoh), header);
 	debug(D_UORI, "u_or_i: newstring: <%s>", newstring.c_str());
 
 	oldsize = callsetter(*assassin,setter)(newstring);
@@ -382,16 +382,16 @@ void update_or_insert(SpamAssassin* assassin, SMFICTX* ctx, string oldstring, t_
 		if (newstring != oldstring)
 		{
 			/* change if old one was present, append if non-null */
+			char* cstr = const_cast<char*>(newstring.c_str());
 			if (oldsize > 0)
 			{
 				debug(D_UORI, "u_or_i: changing");
 				smfi_chgheader(ctx, header, 1, newstring.size() > 0 ? 
-					const_cast<char*>(newstring.c_str()) : NULL );
+					cstr : NULL );
 			} else if (newstring.size() > 0)
 			{
 				debug(D_UORI, "u_or_i: inserting");
-				smfi_addheader(ctx, header, 
-					const_cast<char*>(newstring.c_str()));
+				smfi_addheader(ctx, header, cstr);
 			}
 		} else
 		{
@@ -410,9 +410,9 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 {
   // find end of header (eol in last line of header)
   // and beginning of body
-  string::size_type eoh1(assassin->d().find("\n\n"));
-  string::size_type eoh2(assassin->d().find("\n\r\n"));
-  string::size_type eoh = ( eoh1 < eoh2 ? eoh1 : eoh2 );
+  string::size_type eoh1 = assassin->d().find("\n\n");
+  string::size_type eoh2 = assassin->d().find("\n\r\n");
+  string::size_type eoh = (eoh1 < eoh2) ? eoh1 : eoh2;
   string::size_type bob = assassin->d().find_first_not_of("\r\n", eoh);
 
   if (bob == string::npos)
@@ -426,7 +426,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   if (flag_reject)
   {
 	bool do_reject = false;
-	if (reject_score == -1 && assassin->spam_flag().size()>0)
+	if (reject_score == -1 && !assassin->spam_flag().empty())
 		do_reject = true;
 	if (reject_score != -1)
 	{
@@ -512,7 +512,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 
   /* Drop the message into the spam bucket if it's spam */
   if ( flag_bucket ) {
-        if ( assassin->spam_flag().size() > 0 ) {
+        if (!assassin->spam_flag().empty()) {
           // first, add the spambucket address
           if ( smfi_addrcpt( ctx, spambucket ) != MI_SUCCESS ) {
                 throw string( "Failed to add spambucket to recipients" );
@@ -562,7 +562,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
       if ( smfi_replacebody(ctx, (unsigned char *)body.c_str(), body_size) == MI_FAILURE )
 	throw string("error. could not replace body.");
       
-    };
+    }
 
   return SMFIS_CONTINUE;
 }
@@ -573,7 +573,7 @@ string
 old_retrieve_field(const string& header, const string& field)
 {
   // look for beginning of content
-  string::size_type pos = find_nocase(header, string("\n")+field+string(": "));
+  string::size_type pos = find_nocase(header, "\n" + field + ": ");
 
   // return empty string if not found
   if (pos == string::npos)
@@ -583,18 +583,18 @@ old_retrieve_field(const string& header, const string& field)
   }
 
   // look for end of field name
-  pos = find_nocase(header, string(" "), pos) + 1;
+  pos = find_nocase(header, " ", pos) + 1;
   
   string::size_type pos2(pos);
 
   // is field empty? 
-  if (pos2 == find_nocase(header, string("\n"), pos2))
+  if (pos2 == find_nocase(header, "\n", pos2))
     return string("");
 
   // look for end of content
   do {
 
-    pos2 = find_nocase(header, string("\n"), pos2+1);
+    pos2 = find_nocase(header, "\n", pos2+1);
 
   }
   while ( pos2 < string::npos &&
@@ -615,7 +615,7 @@ retrieve_field(const string& header, const string& field)
   string::size_type idx = 0;
 
   while( field_start == string::npos ) {
-	idx = find_nocase( header, field + string(":"), idx );
+	idx = find_nocase( header, field + ":", idx );
 
 	// no match
 	if ( idx == string::npos ) {
@@ -770,7 +770,7 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
   queueid=smfi_getsymval(ctx,"i");
   if (!queueid)
     queueid="unk";
-  assassin->queueid=string(queueid);
+  assassin->queueid = queueid;
 
   debug(D_MISC, "queueid=%s", queueid);
 
@@ -969,23 +969,23 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
      }
 
   // Is it a "X-Spam-" header field?
-  if ( cmp_nocase_partial(string("X-Spam-"), string(headerf)) == 0 )
+  if ( cmp_nocase_partial("X-Spam-", headerf) == 0 )
     {
       int suppress = 1;
       // memorize content of old fields
 
-      if ( cmp_nocase_partial(string("X-Spam-Status"), string(headerf)) == 0 )
-	assassin->set_spam_status(string(headerv));
-      else if ( cmp_nocase_partial(string("X-Spam-Flag"), string(headerf)) == 0 )
-	assassin->set_spam_flag(string(headerv));
-      else if ( cmp_nocase_partial(string("X-Spam-Report"), string(headerf)) == 0 )
-	assassin->set_spam_report(string(headerv));
-      else if ( cmp_nocase_partial(string("X-Spam-Prev-Content-Type"), string(headerf)) == 0 )
-	assassin->set_spam_prev_content_type(string(headerv));
-      else if ( cmp_nocase_partial(string("X-Spam-Level"), string(headerf)) == 0 )
-	assassin->set_spam_level(string(headerv));
-      else if ( cmp_nocase_partial(string("X-Spam-Checker-Version"), string(headerf)) == 0 )
-	assassin->set_spam_checker_version(string(headerv));
+      if ( cmp_nocase_partial("X-Spam-Status", headerf) == 0 )
+	assassin->set_spam_status(headerv);
+      else if ( cmp_nocase_partial("X-Spam-Flag", headerf) == 0 )
+	assassin->set_spam_flag(headerv);
+      else if ( cmp_nocase_partial("X-Spam-Report", headerf) == 0 )
+	assassin->set_spam_report(headerv);
+      else if ( cmp_nocase_partial("X-Spam-Prev-Content-Type", headerf) == 0 )
+	assassin->set_spam_prev_content_type(headerv);
+      else if ( cmp_nocase_partial("X-Spam-Level", headerf) == 0 )
+	assassin->set_spam_level(headerv);
+      else if ( cmp_nocase_partial("X-Spam-Checker-Version", headerf) == 0 )
+	assassin->set_spam_checker_version(headerv);
       else
       {
       	/* Hm. X-Spam header, but not one we recognize.  Pass it through. */
@@ -997,19 +997,18 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
 	debug(D_FUNC, "mlfi_header: suppress");
 	return SMFIS_CONTINUE;
       }
-    };
+    }
 
   // Content-Type: will be stored if present
-  if ( cmp_nocase_partial(string("Content-Type"), string(headerf)) == 0 )
-    assassin->set_content_type(string(headerv));
+  if ( cmp_nocase_partial("Content-Type", headerf) == 0 )
+    assassin->set_content_type(headerv);
 
   // Subject: should be stored
-  if ( cmp_nocase_partial(string("Subject"), string(headerf)) == 0 )
-    assassin->set_subject(string(headerv));
+  if ( cmp_nocase_partial("Subject", headerf) == 0 )
+    assassin->set_subject(headerv);
 
   // assemble header to be written to SpamAssassin
-  string header=string(headerf)+string(": ")+
-    string(headerv)+string("\r\n");
+  string header = string(headerf) + ": " + headerv + "\r\n";
  
   try {
     // write to SpamAssassin client
@@ -1381,7 +1380,8 @@ SpamAssassin::output(const void* buffer, long size)
   }
 
   // send to SpamAssassin
-  long total(0), wsize(0);
+  long total = 0;
+  long wsize = 0;
   string reason;
   int status;
   do {
@@ -1816,6 +1816,9 @@ void parse_debuglevel(char* string)
 {
 	char *token;
 
+	/* make a copy so we don't overwrite argv[] */
+	string = strdup(string);
+
 	/* handle the old numeric values too */
 	switch(atoi(string))
 	{
@@ -1826,6 +1829,7 @@ void parse_debuglevel(char* string)
 		case 1:
 			flag_debug |= (1<<D_MISC) | (1<<D_FUNC);
 			debug(D_ALWAYS, "Setting debug level to 0x%0x", flag_debug);
+			free(string);
 			return;
 		default:
 			break;
@@ -1855,6 +1859,7 @@ void parse_debuglevel(char* string)
 		}
 	}
 	debug(D_ALWAYS, "Setting debug level to 0x%0x", flag_debug);
+	free(string);
 }
 
 /*
@@ -1905,7 +1910,7 @@ find_nocase(const string& array, const string& pattern, string::size_type start)
 
   while (pos < array.size())
     {
-      string::size_type ctr(0);
+      string::size_type ctr = 0;
 
       while( (pos+ctr) < array.size() &&
 	     toupper(array[pos+ctr]) == toupper(pattern[ctr]) )
@@ -1959,6 +1964,9 @@ void parse_networklist(char *string, struct networklist *list)
 {
 	char *token;
 
+	/* make a copy so we don't overwrite argv[] */
+	string = strdup(string);
+
 	while ((token = strsep(&string, ", ")))
 	{
 		char *tnet = strsep(&token, "/");
@@ -2007,6 +2015,7 @@ void parse_networklist(char *string, struct networklist *list)
 		list->nets[list->num_nets].netmask = mask;
 		list->num_nets++;
 	}
+	free(string);
 }
 
 int ip_in_networklist(struct in_addr ip, struct networklist *list)
