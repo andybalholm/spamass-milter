@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.11 2003/06/09 17:19:25 dnelson Exp $
+$Id: NEWS,v 1.12 2003/06/11 20:18:39 dnelson Exp $
 
 unreleased
  * -b option to redirect tagged messages to another email address.
@@ -6,10 +6,11 @@ unreleased
    networks.
  * All arguments after -- get passed to spamc (deprecate -D at the same
    time).
- * Envelope, remote IP, and date get sent to spamc, so the results more
-   closely match what spamc via procmail sees.  You will need to add a
-   line to your sendmail config file to enable date passing (see
-   README).
+ * Envelope, remote IP, HELO, and date get sent to spamc, so the
+   results more closely match what spamc via procmail sees.  A lot of
+   SA rules could never fire because this data was missing. You will
+   need to add a line to your sendmail config file to enable date
+   passing (see README).
  * A compatible manpage is generated on systems without mdoc macros.
 
 0.1.3a: (2002-12-31)
