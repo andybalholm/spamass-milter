@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.59 2003/07/31 22:35:32 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.60 2003/08/06 04:29:48 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -131,7 +131,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.59 2003/07/31 22:35:32 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.60 2003/08/06 04:29:48 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -1115,7 +1115,7 @@ void SpamAssassin::Connect()
 
       // execution failed
       throw_error(string("execution error: ")+string(strerror(errno)));
-      
+      _exit(1);
       break;
     }
 
@@ -1188,6 +1188,16 @@ SpamAssassin::output(const void* buffer, long size)
 		throw("poll failed");
 
 	debug(D_POLL, "poll returned %d, fd0=%d, fd1=%d", nready, fds[0].revents, fds[1].revents);
+
+	if (fds[1].revents & (POLLERR|POLLNVAL|POLLHUP))
+	{
+		throw string("poll says my read pipe is busted");
+	}
+
+	if (fds[0].revents & (POLLERR|POLLNVAL|POLLHUP))
+	{
+		throw string("poll says my write pipe is busted");
+	}
 
 	if (fds[1].revents & POLLIN)
 	{
@@ -1563,7 +1573,7 @@ void
 throw_error(const string& errmsg)
 {
   if (errmsg.c_str())
-    syslog(LOG_ERR, errmsg.c_str());
+    syslog(LOG_ERR, "Thrown error: %s", errmsg.c_str());
   else
     syslog(LOG_ERR, "Unknown error");
 }
