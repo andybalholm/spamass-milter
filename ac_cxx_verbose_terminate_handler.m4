@@ -1,7 +1,8 @@
 dnl Available from the GNU Autoconf Macro Archive at:
 dnl http://www.gnu.org/software/ac-archive/htmldoc/ac_cxx_verbose_terminate_handler.html
 dnl
-dnl $Id: ac_cxx_verbose_terminate_handler.m4,v 1.1 2003/10/24 06:55:14 dnelson Exp $
+dnl $Id: ac_cxx_verbose_terminate_handler.m4,v 1.2 2004/09/07 01:19:27 dnelson Exp $
+dnl @version: 1.1 (last modified: 2003-01-20)
 AC_DEFUN([AC_CXX_VERBOSE_TERMINATE_HANDLER],
 [AC_CACHE_CHECK(whether the compiler has __gnu_cxx::__verbose_terminate_handler,
 ac_cv_verbose_terminate_handler,

@@ -1,7 +1,8 @@
 dnl Available from the GNU Autoconf Macro Archive at:
 dnl http://www.gnu.org/software/ac-archive/htmldoc/ac_cxx_exceptions.html
+dnl @version Id: 1.3 2004-02-04
 dnl
-dnl $Id: ac_cxx_exceptions.m4,v 1.1 2003/10/24 06:55:14 dnelson Exp $
+dnl $Id: ac_cxx_exceptions.m4,v 1.2 2004/09/07 01:19:26 dnelson Exp $
 AC_DEFUN([AC_CXX_EXCEPTIONS],
 [AC_CACHE_CHECK(whether the compiler supports exceptions,
 ac_cv_cxx_exceptions,
