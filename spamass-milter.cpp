@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.65 2003/08/28 14:59:17 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.66 2003/08/29 16:00:01 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -131,7 +131,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.65 2003/08/28 14:59:17 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.66 2003/08/29 16:00:01 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -696,7 +696,7 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	debug(D_FUNC, "mlfi_envrcpt: enter");
 
 	/* open a pipe to sendmail so we can do address expansion */
-	sprintf(buf, "%s -bv \"%s\"", SENDMAIL, envrcpt[0]);
+	sprintf(buf, "%s -bv \"%s\" 2>&1", SENDMAIL, envrcpt[0]);
 	debug(D_RCPT, "calling %s", buf);
 	p = popen(buf, "r");
 	if (!p)
