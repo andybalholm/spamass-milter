@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.11 2003/06/06 16:05:08 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.12 2003/06/06 16:37:24 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -43,16 +43,26 @@ sfsistat mlfi_abort(SMFICTX*);
 
 extern struct smfiDesc smfilter;
 
+/* struct describing a single network */
 struct net
 {
 	struct in_addr network;
 	struct in_addr netmask;
 };
 
+/* an array of networks */
 struct networklist
 {
 	struct net *nets;
 	int num_nets;
+};
+
+/* holds information about an SMTP connection (which may span multiple
+   messages, so the info can't be stored in a SpamAssassin object)
+*/
+struct connect_info 
+{
+	in_addr ip;
 };
 
 // Debug tokens.
@@ -69,6 +79,8 @@ public:
 
   void Connect();
   void output(const void*, long);
+  void output(const void*);
+  void output(string);
   void close_output();
   void input();
 
@@ -83,6 +95,8 @@ public:
   string& content_type();
   string& subject();
   string& rcpt();
+  string& from();
+  string& connectip();
   string  local_user();
   int     numrcpt();
   int     set_numrcpt();
@@ -96,6 +110,8 @@ public:
   string::size_type set_content_type(const string&);
   string::size_type set_subject(const string&);
   string::size_type set_rcpt(const string&);
+  string::size_type set_from(const string&);
+  string::size_type set_connectip(const string&);
 
 private:
   void empty_and_close_pipe();
@@ -113,7 +129,11 @@ public:
 
   // Variables for SpamAssassin influenced fields
   string x_spam_status, x_spam_flag, x_spam_report, x_spam_prev_content_type;
-  string x_spam_checker_version, x_spam_level, _content_type, _subject, _rcpt;
+  string x_spam_checker_version, x_spam_level, _content_type, _subject;
+  
+  // Envelope info: MAIL FROM:, RCPT TO:, and IP address of remote host
+  // _rcpt only holds the first recipient if there are more than one
+  string _from, _rcpt, _connectip;
   
   // Counter to keep track of the number of recipients
   int    _numrcpt;
@@ -122,6 +142,8 @@ public:
   pid_t pid;
   int pipe_io[2][2];
   
+  // pointer to some per-connection info (shared across multiple messages)
+  struct connect_info *ci;  
 };
 
 /* This hack is the only way to call pointers to member functions! */
