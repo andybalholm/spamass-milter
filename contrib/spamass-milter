@@ -38,7 +38,7 @@ case "$1" in
   start)
 	echo -n "Starting $DESC: "
 
-	start-stop-daemon --start -b --exec $DAEMON --oknodo -- $SOCKET
+	start-stop-daemon --start -b --exec $DAEMON --oknodo -- -p $SOCKET
 
 	echo "${DAEMON}"
 	;;
@@ -57,7 +57,7 @@ case "$1" in
 	start-stop-daemon --stop --exec $DAEMON --oknod
 	/bin/sleep 5s
 	/bin/rm -f $SOCKET
-        start-stop-daemon --start -b --exec $DAEMON --oknodo -- $SOCKET
+        start-stop-daemon --start -b --exec $DAEMON --oknodo -- -p $SOCKET
 
         echo "${DAEMON}"
 
