@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.17 2003/08/28 14:59:17 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.18 2004/01/27 19:39:43 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -11,7 +11,7 @@
 .Op Fl b Ns | Ns Fl B Ar spamaddress
 .Op Fl d Ar debugflags
 .Op Fl D Ar host
-.Op Fl e
+.Op Fl e Ar defaultdomain
 .Op Fl f
 .Op Fl i Ar networks
 .Op Fl m
@@ -32,13 +32,13 @@ Specifies the pathname of a socket to create for communication with
 .Nm sendmail .
 If it is removed,
 .Nm sendmail
-will not be able to access the milter.  This may cause
-messages to bounce, queue, or be passed through unmiltered, depending
-on the parameters in
+will not be able to access the milter.
+This may cause messages to bounce, queue, or be passed through
+unmiltered, depending on the parameters in
 .Nm sendmail Ns 's .cf file.
 .It Fl b Ar spamaddress
-Redirects tagged spam to the specified email address.  All envelope
-recipients are removed, and inserted into the message as
+Redirects tagged spam to the specified email address.
+All envelope recipients are removed, and inserted into the message as
 .Ql X-Spam-Orig-To:
 headers.
 .It Fl B Ar spamaddress
@@ -51,7 +51,7 @@ and
 .Fl B
 may be used.
 .It Fl d Ar debugflags
-Enables logging.  
+Enables logging. 
 .Ar debugflags 
 is a comma-separated list of tokens:
 .Bl -tag -width "indent"
@@ -88,12 +88,16 @@ instead of using one on localhost.
 This option is deprecated; use 
 .Fl - Fl d Ar host 
 instead.
-.It Fl e
-Pass the full user@host address to spamc.
+.It Fl e Ar defaultdomain
+Pass the full user@domain address to spamc.
 The default is to pass only the username part on the assumption that
 all users are local.
 This flag is useful if you are using an SQL (or other username) backend
 with spamassassin and have listed the full address there.
+If the recipient name has no domain part (if the recipient is on the
+local machine for example),
+.Ar defaultdomain 
+is added.
 Requires the
 .Fl u
 flag.
@@ -102,26 +106,29 @@ Causes
 .Nm
 to fork into the background.
 .It Fl i Ar networks
-Ignores messages if the originating IP is in the network(s) listed. 
+Ignores messages if the originating IP is in the network(s) listed.
 The message will be passed through without calling SpamAssassin at all.
 .Ar networks
 is a comma-separated list, where each element can be either an IP address 
 (nnn.nnn.nnn.nnn), a CIDR network (nnn.nnn.nnn.nnn/nn), or a network/netmask
-pair (nnn.nnn.nnn.nnn/nnn.nnn.nnn.nnn).  Multiple
+pair (nnn.nnn.nnn.nnn/nnn.nnn.nnn.nnn).
+Multiple
 .Fl i
-flags will append to the list.  For example, if you list all your
-internal networks, no outgoing emails will be filtered.
+flags will append to the list.
+For example, if you list all your internal networks, no outgoing emails
+will be filtered.
 .It Fl m
 Disables modification of the 
 .Ql Subject: 
 and 
 .Ql Content-Type: 
 headers and
-message body. This is useful when SpamAssassin is configured with
+message body.
+This is useful when SpamAssassin is configured with
 .Ql "defang_mime 0"
 and 
 .Ql "report_header 1" ,
-or when SA is simply used to add headers for postprocessing later. 
+or when SA is simply used to add headers for postprocessing later.
 Updating the body through the milter interface can be slow for large
 messages.
 .It Fl M
@@ -129,13 +136,15 @@ Like
 .Fl m ,
 but also disables creation of any SpamAssassin
 .Ql X-Spam-* 
-headers as well.  Both
-tagged and untagged mail gets passed through unchanged.  To be useful, this option should be used with the
+headers as well.
+Both tagged and untagged mail gets passed through unchanged.
+To be useful, this option should be used with the
 .Fl r ,
 .Fl b , 
 or
 .Fl B
-flags.  If 
+flags.
+If 
 .Fl b
 is used, the 
 .Ql X-Spam-Orig-To:
@@ -158,8 +167,9 @@ messages.
 .It Fl u Ar defaultuser
 Pass the username part of the first recipient to spamc with the 
 .Fl u 
-flag.  This allows user preferences files to be used.  If the message is
-addressed to multiple recipients, the username
+flag.
+This allows user preferences files to be used.
+If the message is addressed to multiple recipients, the username
 .Ar defaultuser
 is passed instead.
 .Pp
@@ -176,7 +186,7 @@ pass
 .Fl u Ar user2
 to spamc.
 .It Fl - Ar spamc flags ...
-Pass all remaining options to spamc.  
+Pass all remaining options to spamc. 
 This allows you to connect to a remote spamd with
 .Fl d
 or 

@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.71 2003/10/24 06:55:14 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.72 2004/01/27 19:39:43 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.71 2003/10/24 06:55:14 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.72 2004/01/27 19:39:43 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -157,7 +157,8 @@ int reject_score = -1;
 bool dontmodifyspam = false;    // Don't modify/add body or spam results headers
 bool dontmodify = false;        // Don't add SA headers, ever.
 bool flag_sniffuser = false;
-char *defaultuser;
+char *defaultuser;				/* Username to send to spamc if there are multiple recipients */
+char *defaultdomain;			/* Domain to append if incoming address has none */
 char *spamdhost;
 struct networklist ignorenets;
 int spamc_argc;
@@ -173,7 +174,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "fd:mMp:P:r:u:D:i:b:B:e";
+   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:";
    char *sock = NULL;
    bool dofork = false;
    char *pidfilename = NULL;
@@ -199,6 +200,7 @@ main(int argc, char* argv[])
 				break;
 			case 'e':
 				flag_full_email = true;
+				defaultdomain = strdup(optarg);
 				break;
 			case 'i':
 				debug(D_MISC, "Parsing ignore list");
@@ -1502,12 +1504,19 @@ SpamAssassin::local_user()
 string
 SpamAssassin::full_user()
 {
+  string name;
   // assuming we have a recipient in the form: <username@somehost.somedomain>
   // we return 'username@somehost.somedomain'
-  if (_rcpt[0]=='<')
-    return _rcpt.substr(1,_rcpt.find('>')-1);
+  if (_rcpt[0] == '<')
+    name = _rcpt.substr(1,_rcpt.find('>')-1);
   else
-  	return _rcpt;
+  	name = _rcpt;
+  if(name.find('@') == string::npos)
+  {
+    /* if the name had no domain part (local delivery), append the default one */
+    name = name + "@" + defaultdomain;
+  }
+  return name;
 }
 
 int
