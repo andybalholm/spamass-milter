@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.70 2003/10/21 21:40:32 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.71 2003/10/24 06:55:14 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.70 2003/10/21 21:40:32 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.71 2003/10/24 06:55:14 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -178,6 +178,10 @@ main(int argc, char* argv[])
    bool dofork = false;
    char *pidfilename = NULL;
    FILE *pidfile = NULL;
+
+#ifdef HAVE_VERBOSE_TERMINATE_HANDLER
+	std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
+#endif
 
    openlog("spamass-milter", LOG_PID, LOG_MAIL);
 
