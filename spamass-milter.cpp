@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.32 2003/06/05 21:18:01 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.33 2003/06/06 15:43:06 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.32 2003/06/05 21:18:01 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.33 2003/06/06 15:43:06 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -240,7 +240,7 @@ main(int argc, char* argv[])
 	err = smfi_main();
 	debug(0, "spamass-milter %s exiting", PACKAGE_VERSION);
 	return err;
-};
+}
 
 // }}}
 
@@ -357,7 +357,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
     };
 
   return SMFIS_CONTINUE;
-};
+}
 
 // retrieve the content of a specific field in the header
 // and return it.
@@ -394,7 +394,7 @@ retrieve_field(const string& header, const string& field)
 
   return header.substr(pos, pos2-pos);
 
-};
+}
 
 // }}}
 
@@ -447,7 +447,7 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
   debug(1, "mlfi_envfrom: exit");
 
   return SMFIS_CONTINUE;
-};
+}
 
 //
 // Gets called once for each recipient
@@ -563,7 +563,7 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
   debug(1, "mlfi_header: exit");
 
   return SMFIS_CONTINUE;
-};
+}
 
 // 
 // Gets called once when the header is finished.
@@ -608,7 +608,7 @@ mlfi_eoh(SMFICTX* ctx)
 
   debug(1, "mlfi_eoh: exit");
   return SMFIS_CONTINUE;
-};
+}
 
 //
 // Gets called repeatedly to transmit the body
@@ -635,7 +635,7 @@ mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
   // go on...
   debug(1, "mlfi_body: exit");
   return SMFIS_CONTINUE;
-};
+}
 
 //
 // Gets called once at the end of mail processing
@@ -677,7 +677,7 @@ mlfi_eom(SMFICTX* ctx)
   // go on...
   debug(1, "mlfi_eom: exit");
   return milter_status;
-};
+}
 
 //
 // Gets called on session-basis. This keeps things nice & quiet.
@@ -687,7 +687,7 @@ mlfi_close(SMFICTX* ctx)
 {
   debug(1, "mlfi_close");
   return SMFIS_ACCEPT;
-};
+}
 
 //
 // Gets called when things are being aborted.
@@ -705,7 +705,7 @@ mlfi_abort(SMFICTX* ctx)
   delete assassin;
 
   return SMFIS_ACCEPT;
-};
+}
 
 // }}}
 
@@ -745,7 +745,7 @@ SpamAssassin::~SpamAssassin()
 			waitpid(pid, &status, 0);
 		}
 	}
-};
+}
 
 //
 // This is the old SpamAssassin constructor.  It has been renamed Connect(),
@@ -844,7 +844,7 @@ void SpamAssassin::Connect()
   // we have to assume the client is running now.
   running=true;
 
-};
+}
 
 // write to SpamAssassin
 void
@@ -918,7 +918,7 @@ SpamAssassin::output(const void* buffer, long size)
   } while ( total < size );
 
   debug(1, "::output exit");
-};
+}
 
 // close output pipe
 void
@@ -927,7 +927,7 @@ SpamAssassin::close_output()
   if(close(pipe_io[0][1]))
     throw string(string("close error: ")+string(strerror(errno)));
   pipe_io[0][1]=-1;
-};
+}
 
 void
 SpamAssassin::input()
@@ -952,7 +952,7 @@ SpamAssassin::input()
       throw string(string("waitpid error: ")+string(strerror(errno)));
     }; 
 	debug(1, "::input exit");
-};
+}
 
 //
 // return reference to mail
@@ -961,7 +961,7 @@ string&
 SpamAssassin::d()
 {
   return mail;
-};
+}
 
 //
 // get values of the different SpamAssassin fields
@@ -970,49 +970,49 @@ string&
 SpamAssassin::spam_status()
 {
   return x_spam_status;
-};
+}
 
 string& 
 SpamAssassin::spam_flag()
 {
   return x_spam_flag;
-};
+}
 
 string& 
 SpamAssassin::spam_report()
 {
   return x_spam_report;
-};
+}
 
 string& 
 SpamAssassin::spam_prev_content_type()
 {
   return x_spam_prev_content_type;
-};
+}
 
 string& 
 SpamAssassin::spam_checker_version()
 {
   return x_spam_checker_version;
-};
+}
 
 string& 
 SpamAssassin::spam_level()
 {
   return x_spam_level;
-};
+}
 
 string& 
 SpamAssassin::content_type()
 {
   return _content_type;
-};
+}
 
 string& 
 SpamAssassin::subject()
 {
   return _subject;
-};
+}
 
 string&
 SpamAssassin::rcpt()
@@ -1058,7 +1058,7 @@ SpamAssassin::set_spam_status(const string& val)
   string::size_type old = x_spam_status.size();
   x_spam_status = val;
   return (old);
-};
+}
 
 string::size_type
 SpamAssassin::set_spam_flag(const string& val)
@@ -1066,7 +1066,7 @@ SpamAssassin::set_spam_flag(const string& val)
   string::size_type old = x_spam_flag.size();
   x_spam_flag = val;
   return (old);
-};
+}
 
 string::size_type
 SpamAssassin::set_spam_report(const string& val)
@@ -1074,7 +1074,7 @@ SpamAssassin::set_spam_report(const string& val)
   string::size_type old = x_spam_report.size();
   x_spam_report = val;
   return (old);
-};
+}
 
 string::size_type
 SpamAssassin::set_spam_prev_content_type(const string& val)
@@ -1082,7 +1082,7 @@ SpamAssassin::set_spam_prev_content_type(const string& val)
   string::size_type old = x_spam_prev_content_type.size();
   x_spam_prev_content_type = val;
   return (old);
-};
+}
 
 string::size_type
 SpamAssassin::set_spam_checker_version(const string& val)
@@ -1090,7 +1090,7 @@ SpamAssassin::set_spam_checker_version(const string& val)
   string::size_type old = x_spam_checker_version.size();
   x_spam_checker_version = val;
   return (old);
-};
+}
 
 string::size_type
 SpamAssassin::set_spam_level(const string& val)
@@ -1098,7 +1098,7 @@ SpamAssassin::set_spam_level(const string& val)
   string::size_type old = x_spam_level.size();
   x_spam_level = val;
   return (old);
-};
+}
 
 string::size_type
 SpamAssassin::set_content_type(const string& val)
@@ -1106,7 +1106,7 @@ SpamAssassin::set_content_type(const string& val)
   string::size_type old = _content_type.size();
   _content_type = val;
   return (old);
-};
+}
 
 string::size_type
 SpamAssassin::set_subject(const string& val)
@@ -1114,7 +1114,7 @@ SpamAssassin::set_subject(const string& val)
   string::size_type old = _subject.size();
   _subject = val;
   return (old);
-};
+}
 
 string::size_type
 SpamAssassin::set_rcpt(const string& val)
@@ -1182,7 +1182,7 @@ SpamAssassin::read_pipe()
 	}
 	debug(1, "::read_pipe exit");
 	return size;
-};
+}
 
 //
 // Read all output from SpamAssassin client
@@ -1195,7 +1195,7 @@ SpamAssassin::empty_and_close_pipe()
 	while (read_pipe())
 		;
 	debug(1, "::empty_and_close_pipe exit");
-};
+}
 
 // }}}
 
@@ -1209,7 +1209,7 @@ throw_error(const string& errmsg)
     syslog(LOG_ERR, errmsg.c_str());
   else
     syslog(LOG_ERR, "Unknown error");
-};
+}
 
 void debug(int level, const char* string, ...)
 {
@@ -1273,7 +1273,7 @@ find_nocase(const string& array, const string& pattern, string::size_type start)
 
   debug(3, "f_nc: <%s><%s>: nohit", array.c_str(), pattern.c_str());
   return string::npos;
-};
+}
 
 // compare case-insensitive
 int
@@ -1295,7 +1295,7 @@ cmp_nocase_partial(const string& s, const string& s2)
   debug(3, "c_nc_p: <%s><%s> : hit", s.c_str(), s2.c_str());
   return 0;
 
-};
+}
 
 /* closeall() - close all FDs >= a specified value */ 
 void closeall(int fd) 
