@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.1 2002/01/16 09:41:13 greve Exp $
+//  $Id: spamass-milter.cpp,v 1.2 2002/01/16 22:19:47 greve Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -63,6 +63,7 @@
 //
 
 // Includes  
+#include "config.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -517,7 +518,7 @@ SpamAssassin::SpamAssassin():
   if (pipe(pipe_io[1]))
     throw string(string("pipe error: ")+string(strerror(errno)));
   
-  // now execute /usr/bin/spamc for contact with SpamAssassin spamd
+  // now execute SpamAssassin client for contact with SpamAssassin spamd
 
   // start child process
   switch(pid = fork())
@@ -538,10 +539,11 @@ SpamAssassin::SpamAssassin():
       dup2(pipe_io[1][1],1);
       dup2(pipe_io[1][1],2);
 
-      // execute spamc
-      // absolute path should be a little more secure
+      // execute spamc 
+      // absolute path (determined in autoconf) 
+      // should be a little more secure
       char** argv = (char**) malloc(3*sizeof(char*));
-      argv[0] = "/usr/bin/spamc";
+      argv[0] = SPAMC;
       argv[1] = 0;
       execvp(argv[0] , argv); // does not return!
 
