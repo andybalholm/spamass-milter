@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.11 2003/06/03 02:08:42 dnelson Exp $
+## $Id: Makefile.am,v 1.12 2003/06/06 15:34:10 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign
 
@@ -44,3 +44,5 @@ EXTRA_DIST =	$(DEB_CONTRIB) \
 		$(FBSD_CONTRIB) \
 		$(MISC_CONTRIB) \
 		spamass-milter.1.in
+
+spamass-milter.cpp: spamass-milter.h
