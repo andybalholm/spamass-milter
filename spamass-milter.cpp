@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.6 2002/03/06 13:07:07 greve Exp $
+//  $Id: spamass-milter.cpp,v 1.7 2002/03/27 15:56:17 supermathie Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -68,6 +68,7 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,7 +91,7 @@ extern "C" {
 #endif
 
 #include "libmilter/mfapi.h"
-#include "libmilter/mfdef.h"
+//#include "libmilter/mfdef.h"
 
 #ifdef  __cplusplus
 }
@@ -105,29 +106,60 @@ extern "C" {
 int
 main(int argc, char* argv[])
 {
-  // ONLY command line option: socket filename!
-  if ( argc != 2 )
-    {
+   int c;
+	const char *args = "p:f";
+   char *sock = NULL;
+   bool dofork = false;
+
+	/* Process command line options */
+	while ((c = getopt(argc, argv, args)) != -1) {
+		switch (c) {
+		   case 'p':
+            if (optarg == NULL || *optarg == '\0') {
+					(void) fprintf(stderr, "Illegal conn: %s\n", optarg);
+					exit(EX_USAGE);
+            }
+				sock = strdup(optarg);
+				break;
+			case 'f':
+				dofork = true;
+				break;
+		}
+	}
+
+   if (sock == NULL) {
       cout << PACKAGE << "- Version" << VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter <socket>" << endl;
-      _exit(0);
-    };
+      cout << "Usage: spamass-milter -p <socket> [-f]" << endl;
+      cout << "   -f: forks into background" << endl;
+      _exit(EX_USAGE);
+   }
 
-  // set connection socket
-  smfi_setconn(argv[1]);
+	if (dofork == true) {
+		switch(fork()) {
+         case -1: /* Uh-oh, we have a problem forking. */
+            fprintf(stderr, "Uh-oh, couldn't fork!\n");
+				exit(errno);
+				break;
+			case 0: /* Child */
+				break;
+			default: /* Parent */
+				exit(0);
+		}
+	}
+   {
+      struct stat junk;
+      if (stat(sock,&junk) == 0) unlink(sock);
+   }
 
-  // register callbacks with Milter
-  if (smfi_register(smfilter) == MI_FAILURE)
-    {
-      throw_error("smfi_register failed");
-      cerr << "smfi_register failed. exit." << endl;
-      exit(EX_UNAVAILABLE);
-    };
-
-  // enter Milter main routine
-  return smfi_main();
-
+   (void) smfi_setconn(sock);
+	if (smfi_register(smfilter) == MI_FAILURE) {
+		fprintf(stderr, "smfi_register failed\n");
+		exit(EX_UNAVAILABLE);
+	} else {
+      fprintf(stderr, "smfi_register succeeded\n");
+   }
+	return smfi_main();
 };
 
 // }}}
@@ -553,9 +585,18 @@ SpamAssassin::SpamAssassin():
       // execute spamc 
       // absolute path (determined in autoconf) 
       // should be a little more secure
-      char** argv = (char**) malloc(3*sizeof(char*));
+#if 0
+      char** argv = (char**) malloc(4*sizeof(char*));
+      argv[0] = SPAMC;
+      argv[1] = "-u";
+      argv[2] = "milter";
+      argv[3] = 0;
+#else
+      char** argv = (char**) malloc(2*sizeof(char*));
       argv[0] = SPAMC;
       argv[1] = 0;
+#endif
+
       execvp(argv[0] , argv); // does not return!
 
       // execution failed
@@ -909,3 +950,4 @@ cmp_nocase_partial(const string& s, const string& s2)
 };
 
 // }}}
+// vim6:ai:noexpandtab
