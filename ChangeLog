@@ -1,3 +1,15 @@
+2002-01-31  Georg C. F. Greve  <greve@gnu.org>
+
+	* spamass-milter.cpp (set_spam_checker_version): see below
+	(spam_checker_version): see below
+	(assassinate): see below
+	(mlfi_header): Added "X-Spam-Checker-Version" field for SpamAssassin 2.0+
+	(mlfi_eom): remove obsolete thrown message
+	(mlfi_eom): only modify mails that were NOT rated Spam before
+	(mlfi_header): let old X-Spam fields be written to SpamAssassin
+
+	* spamass-milter.h: Added "X-Spam-Checker-Version" field for SpamAssassin 2.0+
+
 2002-01-16  Georg C. F. Greve  <greve@gnu.org>
 
 	* configure.in: created simple autoconf setup.

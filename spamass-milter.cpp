@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.3 2002/01/16 22:24:52 greve Exp $
+//  $Id: spamass-milter.cpp,v 1.4 2002/01/31 15:28:34 greve Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -13,7 +13,7 @@
 //
 //  Copyright (c) 2002 Georg C. F. Greve <greve@gnu.org>
 //
-//
+// Add tracking of X-Spam-Checker-Version: flag!
 
 // {{{ License, Contact, Notes & Includes 
 
@@ -203,7 +203,20 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
     smfi_addheader(ctx, "X-Spam-Prev-Content-Type", 
 		   const_cast<char*>(assassin->spam_prev_content_type().c_str()));
 
-        
+
+  // X-Spam-Checker-Version header //
+  // find it:
+  old = assassin->set_spam_checker_version(retrieve_field(assassin->d().substr(0, eoh), 
+							  string("X-Spam-Checker-Version")));
+  
+  // change if old one was present, append if non-null
+  if (old > 0)
+    smfi_chgheader(ctx,"X-Spam-Checker-Version",1,assassin->spam_checker_version().size() > 0 ? 
+		   const_cast<char*>(assassin->spam_checker_version().c_str()) : NULL );
+  else if (assassin->spam_checker_version().size()>0)
+    smfi_addheader(ctx, "X-Spam-Checker-Version", 
+		   const_cast<char*>(assassin->spam_checker_version().c_str()));
+  
   // 
   // If SpamAssassin thinks it is spam, replace
   //  Subject:
@@ -349,9 +362,11 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
       // X-Spam-Prev-Content-Type:
       if ( cmp_nocase_partial(string("X-Spam-Prev-Content-Type"), string(headerf)) == 0 )
 	assassin->set_spam_prev_content_type(string(headerv));
+      
+      // X-Spam-Checker-Version:
+      if ( cmp_nocase_partial(string("X-Spam-Checker-Version"), string(headerf)) == 0 )
+	assassin->set_spam_spam_checker_version(string(headerv));
 
-      // ...but do not pass them on. SpamAssassin should go for it on its own.
-      return SMFIS_CONTINUE;
     };
 
   // Content-Type: will be stored if present
@@ -451,18 +466,12 @@ mlfi_eom(SMFICTX* ctx)
     // read what the Assassin is telling us
     assassin->input();
 
-    // now is our chance to modify the mail accordingly to what
-    // the SpamAssassin told us.
-    assassinate(ctx, assassin);
-
-    // is it SPAM?
-    if (assassin->spam_flag().size()>0)
-      {
-	
-	// true: it is SPAM! Yuck.
-	throw_error(string("SpamAssassin verdict: ")+assassin->spam_status());
-	
-      };
+    // It makes no sense to modify the mail if it already rated
+    // Spam. Otherwise this is our chance to modify the mail
+    // accordingly to what the SpamAssassin told us.
+    //
+    if (assassin->spam_flag().size()==0)
+      assassinate(ctx, assassin);
 
     // now cleanup the element.
     smfi_setpriv(ctx, static_cast<void*>(0));
@@ -709,6 +718,12 @@ SpamAssassin::spam_prev_content_type()
 };
 
 string& 
+spam_checker_version()
+{
+  return x_spam_checker_version;
+};
+
+string& 
 SpamAssassin::content_type()
 {
   return _content_type;
@@ -753,6 +768,14 @@ SpamAssassin::set_spam_prev_content_type(const string& val)
 {
   string::size_type old = x_spam_prev_content_type.size();
   x_spam_prev_content_type = val;
+  return (old);
+};
+
+string::size_type
+SpamAssassin::set_spam_checker_version(const string& val)
+{
+  string::size_type old = x_spam_checker_version.size();
+  x_spam_checker_version = val;
   return (old);
 };
 

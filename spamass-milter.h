@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.1 2002/01/16 09:41:13 greve Exp $
+//  $Id: spamass-milter.h,v 1.2 2002/01/31 15:28:50 greve Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -49,12 +49,14 @@ public:
   string& spam_flag();
   string& spam_report();
   string& spam_prev_content_type();
+  string& spam_checker_version();
   string& content_type();
   string& subject();
   string::size_type set_spam_status(const string&);
   string::size_type set_spam_flag(const string&);
   string::size_type set_spam_report(const string&);
   string::size_type set_spam_prev_content_type(const string&);
+  string::size_type set_spam_checker_version(const string&);
   string::size_type set_content_type(const string&);
   string::size_type set_subject(const string&);
 
@@ -70,8 +72,9 @@ public:
   // was piped through SpamAssassin
   string mail;
 
-  // Rating of mail
-  string x_spam_status, x_spam_flag, x_spam_report, x_spam_prev_content_type, _content_type, _subject;
+  // Variables for SpamAssassin influenced fields
+  string x_spam_status, x_spam_flag, x_spam_report, x_spam_prev_content_type;
+  string x_spam_checker_version, _content_type, _subject;
 
   // Process handling variables
   pid_t pid;
