@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.7 2002/03/27 15:56:17 supermathie Exp $
+//  $Id: spamass-milter.cpp,v 1.8 2002/04/27 17:05:32 greve Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -237,6 +237,20 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 		   const_cast<char*>(assassin->spam_prev_content_type().c_str()));
 
 
+  // X-Spam-Level header //
+  // find it:
+  old = assassin->set_spam_level(retrieve_field(assassin->d().substr(0, eoh), 
+						string("X-Spam-Level")));
+  
+  // change if old one was present, append if non-null
+  if (old > 0)
+    smfi_chgheader(ctx,"X-Spam-Level",1,assassin->spam_level().size() > 0 ? 
+		   const_cast<char*>(assassin->spam_level().c_str()) : NULL );
+  else if (assassin->spam_level().size()>0)
+    smfi_addheader(ctx, "X-Spam-Level", 
+		   const_cast<char*>(assassin->spam_level().c_str()));
+  
+
   // X-Spam-Checker-Version header //
   // find it:
   old = assassin->set_spam_checker_version(retrieve_field(assassin->d().substr(0, eoh), 
@@ -249,7 +263,8 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   else if (assassin->spam_checker_version().size()>0)
     smfi_addheader(ctx, "X-Spam-Checker-Version", 
 		   const_cast<char*>(assassin->spam_checker_version().c_str()));
-  
+
+
   // 
   // If SpamAssassin thinks it is spam, replace
   //  Subject:
@@ -395,6 +410,10 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
       // X-Spam-Prev-Content-Type:
       if ( cmp_nocase_partial(string("X-Spam-Prev-Content-Type"), string(headerf)) == 0 )
 	assassin->set_spam_prev_content_type(string(headerv));
+
+      // X-Spam-Level:
+      if ( cmp_nocase_partial(string("X-Spam-Level"), string(headerf)) == 0 )
+	assassin->set_spam_level(string(headerv));
       
       // X-Spam-Checker-Version:
       if ( cmp_nocase_partial(string("X-Spam-Checker-Version"), string(headerf)) == 0 )
@@ -766,6 +785,12 @@ SpamAssassin::spam_checker_version()
 };
 
 string& 
+SpamAssassin::spam_level()
+{
+  return x_spam_level;
+};
+
+string& 
 SpamAssassin::content_type()
 {
   return _content_type;
@@ -818,6 +843,14 @@ SpamAssassin::set_spam_checker_version(const string& val)
 {
   string::size_type old = x_spam_checker_version.size();
   x_spam_checker_version = val;
+  return (old);
+};
+
+string::size_type
+SpamAssassin::set_spam_level(const string& val)
+{
+  string::size_type old = x_spam_level.size();
+  x_spam_level = val;
   return (old);
 };
 

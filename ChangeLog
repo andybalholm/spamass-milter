@@ -1,3 +1,8 @@
+2002-04-27  Georg C. F. Greve  <greve@gnu.org>
+
+	* spamass-milter.h
+	* spamass-milter.cpp: Added support for "X-Spam-Level" flag introduced with 2.20 of SpamAssassin
+
 2002-03-06  Georg C. F. Greve  <greve@gnu.org>
 
 	* Appointed Michael Brown <michaelb@opentext.com> new maintainer of spamass-milter
