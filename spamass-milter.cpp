@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.84 2004/09/21 21:04:51 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.85 2004/09/24 04:42:16 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.84 2004/09/21 21:04:51 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.85 2004/09/24 04:42:16 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -671,6 +671,10 @@ retrieve_field(const string& header, const string& field)
 	  }
 	}
   }
+
+  /* if the header line ends in \r\n, don't return the \r */
+  if (header[field_end-1] == '\r')
+  	field_end--;
 
   //  Maybe remove the whitespace picked up when a header wraps - this
   //  might actually be a requirement
