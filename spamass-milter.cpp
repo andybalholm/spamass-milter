@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.17 2002/11/15 23:22:32 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.18 2002/11/17 22:57:23 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -104,7 +104,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.17 2002/11/15 23:22:32 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.18 2002/11/17 22:57:23 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -124,6 +124,8 @@ struct smfiDesc smfilter =
   };
 
 int flag_debug = 0;
+bool flag_reject = false;
+int reject_score = -1;
 bool dontmodify = false;
 
 // {{{ main()
@@ -132,7 +134,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:m";
+   const char *args = "p:fd:mr:";
    char *sock = NULL;
    bool dofork = false;
 
@@ -151,6 +153,10 @@ main(int argc, char* argv[])
 			case 'm':
 				dontmodify = true;
 				break;
+			case 'r':
+				flag_reject = true;
+				reject_score = atoi(optarg);
+				break;
 			case '?':
 				err = 1;
 				break;
@@ -160,11 +166,13 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-f] [-d nn]" << endl;
+      cout << "Usage: spamass-milter -p socket [-f] [-d nn] [-m] [-r nn]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -f: fork into background" << endl;
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -d nn: set debug level to nn (1-3).  Logs to syslog" << endl;
+      cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n" 
+              "          use -1 to reject any messages tagged by SA." << endl;
       exit(EX_USAGE);
    }
 
@@ -194,7 +202,10 @@ main(int argc, char* argv[])
 	} else {
       debug(1, "smfi_register succeeded");
    }
-	return smfi_main();
+	debug(0, "spamass-milter %s starting", PACKAGE_VERSION);
+	err = smfi_main();
+	debug(0, "spamass-milter %s exiting", PACKAGE_VERSION);
+	return err;
 };
 
 // }}}
@@ -239,9 +250,9 @@ void update_or_insert(SpamAssassin* assassin, SMFICTX* ctx, string oldstring, t_
 // {{{ Assassinate
 
 //
-// implement the changes suggested by SpamAssassin for the mail.
-//
-void
+// implement the changes suggested by SpamAssassin for the mail.  Returns
+// the milter error code.
+int 
 assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 {
   // find end of header (eol in last line of header)
@@ -251,8 +262,38 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   string::size_type eoh = ( eoh1 < eoh2 ? eoh1 : eoh2 );
   string::size_type bob = assassin->d().find_first_not_of("\r\n", eoh);
 
-  update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
   update_or_insert(assassin, ctx, assassin->spam_flag(), &SpamAssassin::set_spam_flag, "X-Spam-Flag");
+  update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
+
+  /* Summarily reject the message if SA tagged it, or if we have a minimum
+     score, reject if it exceeds that score. */
+  if (flag_reject)
+  {
+	bool do_reject = false;
+	if (reject_score == -1 && assassin->spam_flag().size()>0)
+		do_reject = true;
+	if (reject_score != -1)
+	{
+		int score, rv;
+		const char *spam_status = assassin->spam_status().c_str();
+		rv = sscanf(spam_status,"%*s hits=%d", &score);
+		if (rv != 1)
+			debug(0, "Could not extract score from <%s>", spam_status);
+		else 
+		{
+			debug(1, "SA score: %d", score);
+			if (score >= reject_score)
+				do_reject = true;
+		}
+	}
+	if (do_reject)
+	{
+		debug(1, "Rejecting");
+		smfi_setreply(ctx, "550", "5.7.1", "Blocked by SpamAssassin");
+		return SMFIS_REJECT;
+	}
+  }
+
   update_or_insert(assassin, ctx, assassin->spam_report(), &SpamAssassin::set_spam_report, "X-Spam-Report");
   update_or_insert(assassin, ctx, assassin->spam_prev_content_type(), &SpamAssassin::set_spam_prev_content_type, "X-Spam-Prev-Content-Type");
   update_or_insert(assassin, ctx, assassin->spam_level(), &SpamAssassin::set_spam_level, "X-Spam-Level");
@@ -272,7 +313,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 	  update_or_insert(assassin, ctx, assassin->subject(), &SpamAssassin::set_subject, "Subject");
 	  update_or_insert(assassin, ctx, assassin->content_type(), &SpamAssassin::set_content_type, "Content-Type");
 
-      // Replace body with the one SpamAssassin provided //
+      // Replace body with the one SpamAssassin provided
       string::size_type body_size = assassin->d().size() - bob;
       string body=assassin->d().substr(bob, string::npos);
       if ( smfi_replacebody(ctx, (unsigned char *)body.c_str(), body_size) == MI_FAILURE )
@@ -280,9 +321,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
       
     };
 
-  // erase mail right away
-  assassin->d().erase();
-  
+  return SMFIS_CONTINUE;
 };
 
 // retrieve the content of a specific field in the header
@@ -497,6 +536,7 @@ sfsistat
 mlfi_eom(SMFICTX* ctx)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+  int milter_status;
  
   debug(1, "mlfi_eom: enter");
   try {
@@ -507,12 +547,7 @@ mlfi_eom(SMFICTX* ctx)
     // read what the Assassin is telling us
     assassin->input();
 
-    // It makes no sense to modify the mail if it already rated
-    // Spam. Otherwise this is our chance to modify the mail
-    // accordingly to what the SpamAssassin told us.
-    //
-    if (assassin->spam_flag().size()==0)
-      assassinate(ctx, assassin);
+    milter_status = assassinate(ctx, assassin);
 
     // now cleanup the element.
     smfi_setpriv(ctx, static_cast<void*>(0));
@@ -529,7 +564,7 @@ mlfi_eom(SMFICTX* ctx)
   
   // go on...
   debug(1, "mlfi_eom: exit");
-  return SMFIS_CONTINUE;
+  return milter_status;
 };
 
 //

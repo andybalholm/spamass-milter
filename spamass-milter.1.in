@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.3 2002/11/15 23:22:32 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.4 2002/11/17 22:57:23 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -11,6 +11,7 @@
 .Op Fl f
 .Op Fl m
 .Op Fl d Ar nn
+.Op Fl r Ar nn
 .Sh DESCRIPTION
 The
 .Nm
@@ -49,6 +50,18 @@ Log entry and exit of internal functions.
 Also log I/O operations with 
 .Nm spamc .
 .El
+.It Fl r Ar nn
+Reject scanned email if it greater than or equal to
+.Ar nn .
+If 
+.Ar -1 ,
+reject scanned email if SpamAssassin tags it as spam.  
+.Pp
+For example: if you usually use procmail to redirect tagged email into
+a separate folder just in case of false positives, you can use
+.Fl r Ar 15
+and reject flagrant spam outright while still receiving low-scoring
+messages.
 .El
 .Sh FILES
 .Bl -tag -width "indent"

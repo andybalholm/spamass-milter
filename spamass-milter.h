@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.6 2002/11/15 07:04:16 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.7 2002/11/17 22:57:23 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -96,7 +96,7 @@ public:
 typedef string::size_type (SpamAssassin::*t_setter)(const string &val);
 #define callsetter(object, ptrToMember)  ((object).*(ptrToMember))
        
-void assassinate(SMFICTX*, SpamAssassin*);
+int assassinate(SMFICTX*, SpamAssassin*);
 
 void throw_error(const string&);
 void debug(int level, const char* string, ...);
