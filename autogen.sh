@@ -1,5 +1,5 @@
 #!/bin/sh -e
-# $Id: autogen.sh,v 1.12 2004/10/29 15:56:33 dnelson Exp $
+# $Id: autogen.sh,v 1.13 2004/11/05 16:26:23 dnelson Exp $
 # Run this to update & generate all the automatic things
 #
 
@@ -18,7 +18,7 @@ for i in 19 -1.9 18 -1.8 17 -1.7 1.6 -1.6 15 -1.5 ; do
  fi
 done
 
-# export these because all 4 need to know the exact name of the other three
+# export these because all 5 need to know the exact name of the other ones
 AUTOCONF=autoconf$AC ; export AUTOCONF
 AUTOHEADER=autoheader$AC ; export AUTOHEADER
 AUTOM4TE=autom4te$AC ; export AUTOM4TE
