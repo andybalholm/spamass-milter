@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.26 2003/06/18 23:13:03 dnelson Exp $
+# $Id: configure.in,v 1.27 2003/06/25 15:17:22 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.3a+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.26 $)
+AC_REVISION($Revision: 1.27 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -109,4 +109,4 @@ AC_CHECK_HEADERS(libmilter/mfapi.h,,[
 ])
 
 # Makefiles to create:
-AC_OUTPUT(Makefile contrib/spamass-milter.spec spamass-milter.1)
+AC_OUTPUT(Makefile contrib/spamass-milter.spec spamass-milter.1 spamass-milter.man)
