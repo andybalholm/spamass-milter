@@ -1,9 +1,15 @@
-$Id: NEWS,v 1.9 2003/06/03 07:20:02 dnelson Exp $
+$Id: NEWS,v 1.10 2003/06/06 21:04:40 dnelson Exp $
 
 unreleased
  * -i option to not run spamassassin on messages coming from internal
    networks.
- * pass all arguments after -- to spamc (deprecate -D at the same time).
+ * All arguments after -- get passed to spamc (deprecate -D at the same
+   time).
+ * Envelope, remote IP, and date get sent to spamc, so the results more
+   closely match what spamc via procmail sees.  You will need to add a
+   line to your sendmail config file to enable date passing (see
+   README).
+ * A compatible manpage is generated on systems without mdoc macros.
 
 0.1.3a: (2002-12-31)
  * Fixed hanging problem when processing a message with no headers at
