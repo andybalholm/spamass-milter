@@ -1,5 +1,5 @@
 #!/bin/sh -e
-# $Id: autogen.sh,v 1.8 2003/10/27 04:00:28 dnelson Exp $
+# $Id: autogen.sh,v 1.9 2004/02/24 23:02:56 dnelson Exp $
 # Run this to update & generate all the automatic things
 #
 
@@ -18,11 +18,15 @@ for i in 17 -1.7 1.6 -1.6 15 -1.5 ; do
  fi
 done
 
+# export these because all 4 need to know the exact name of the other three
 AUTOCONF=autoconf$AC ; export AUTOCONF
 AUTOHEADER=autoheader$AC ; export AUTOHEADER
-aclocal$AM -I .
-autoheader$AC
-automake$AM --add-missing
-autoconf$AC
+ACLOCAL=aclocal$AM ; export ACLOCAL
+AUTOMAKE=automake$AM ; export AUTOMAKE
+
+$ACLOCAL -I .
+$AUTOHEADER
+$AUTOMAKE --add-missing
+$AUTOCONF
 
 ./configure $*
