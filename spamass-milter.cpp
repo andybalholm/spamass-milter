@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.51 2003/06/26 14:45:18 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.52 2003/06/26 15:10:44 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -130,7 +130,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.51 2003/06/26 14:45:18 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.52 2003/06/26 15:10:44 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -569,7 +569,7 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 	{
 		/* not a socket; probably a local user calling sendmail directly */
 		/* set to 127.0.0.1 */
-		sctx->connect_ip.s_addr = inet_htonl(INADDR_LOOPBACK);
+		sctx->connect_ip.s_addr = htonl(INADDR_LOOPBACK);
 	} else
 	{
 		sctx->connect_ip = ((struct sockaddr_in *) hostaddr)->sin_addr;
