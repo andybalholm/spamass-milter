@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.14 2002/11/15 21:54:24 dnelson Exp $
-AC_INIT(spamass-milter, 0.1.2+cvs)
+# $Id: configure.in,v 1.15 2002/12/27 21:53:18 dnelson Exp $
+AC_INIT(spamass-milter, 0.1.3)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.14 $)
+AC_REVISION($Revision: 1.15 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
