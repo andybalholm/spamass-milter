@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.81 2004/07/29 02:15:09 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.82 2004/08/26 18:01:35 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.81 2004/07/29 02:15:09 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.82 2004/08/26 18:01:35 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -432,7 +432,13 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 	{
 		int score, rv;
 		const char *spam_status = assassin->spam_status().c_str();
-		rv = sscanf(spam_status,"%*s hits=%d", &score);
+		/* SA 3.0 uses the keyword "score" */
+		rv = sscanf(spam_status,"%*s score=%d", &score);
+		if (rv != 1)
+		{
+			/* SA 2.x uses the keyword "hits" */
+			rv = sscanf(spam_status,"%*s hits=%d", &score);
+		}
 		if (rv != 1)
 			debug(D_ALWAYS, "Could not extract score from <%s>", spam_status);
 		else 
