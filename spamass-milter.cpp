@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.72 2004/01/27 19:39:43 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.73 2004/02/22 04:16:27 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.72 2004/01/27 19:39:43 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.73 2004/02/22 04:16:27 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -167,6 +167,7 @@ bool flag_bucket = false;
 bool flag_bucket_only = false;
 char *spambucket;
 bool flag_full_email = false;		/* pass full email address to spamc */
+bool flag_expand = false;	/* alias/virtusertable expansion */
 
 // {{{ main()
 
@@ -174,7 +175,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:";
+   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:x";
    char *sock = NULL;
    bool dofork = false;
    char *pidfilename = NULL;
@@ -250,6 +251,9 @@ main(int argc, char* argv[])
 				// XXX we should probably verify that optarg is vaguely sane
 				spambucket = strdup( optarg );
 				break;
+			case 'x':
+				flag_expand = true;
+				break;
 			case '?':
 				err = 1;
 				break;
@@ -269,9 +273,9 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-e] [-D host] [-f]" << endl;
-      cout << "                      [-i networks] [-m] [-M] [-r nn] [-u defaultuser]" << endl;
-      cout << "                      [-- spamc args ]" << endl;
+      cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-e]" << endl;
+      cout << "                      [-D host] [-f] [-i networks] [-m] [-M] [-r nn]" << endl;
+      cout << "                      [-u defaultuser] [-x] [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
       cout << "          recipient(s) will not receive anything." << endl;
@@ -288,6 +292,7 @@ main(int argc, char* argv[])
               "          use -1 to reject any messages tagged by SA." << endl;
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
               "          Uses 'defaultuser' if there are multiple recipients." << endl;
+      cout << "   -x: pass email address through alias and virtusertable expansion." << endl;
       cout << "   -- spamc args: pass the remaining flags to spamc." << endl;
               
       exit(EX_USAGE);
@@ -727,59 +732,66 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
 
-	/* open a pipe to sendmail so we can do address expansion */
-	sprintf(buf, "%s -bv \"%s\" 2>&1", SENDMAIL, envrcpt[0]);
-	debug(D_RCPT, "calling %s", buf);
-#if defined(__FreeBSD__)
-	debug(D_FUNC, "locking mutex");
-	rv = pthread_mutex_lock(&popen_mutex);
-	if (rv)
+	if (flag_expand)
 	{
-		debug(D_ALWAYS, "Could not lock popen mutex: %s", strerror(rv));
-		abort();
-	}		
-	debug(D_FUNC, "locked mutex");
+		/* open a pipe to sendmail so we can do address expansion */
+		sprintf(buf, "%s -bv \"%s\" 2>&1", SENDMAIL, envrcpt[0]);
+		debug(D_RCPT, "calling %s", buf);
+#if defined(__FreeBSD__) /* popen bug - see PR bin/50770 */
+		debug(D_FUNC, "locking mutex");
+		rv = pthread_mutex_lock(&popen_mutex);
+		if (rv)
+		{
+			debug(D_ALWAYS, "Could not lock popen mutex: %s", strerror(rv));
+			abort();
+		}		
+		debug(D_FUNC, "locked mutex");
 #endif
-	p = popen(buf, "r");
-	if (!p)
-	{
-		debug(D_RCPT, "popen failed(%s).  Will not expand aliases", strerror(errno));
+		p = popen(buf, "r");
+		if (!p)
+		{
+			debug(D_RCPT, "popen failed(%s).  Will not expand aliases", strerror(errno));
+			assassin->expandedrcpt.push_back(envrcpt[0]);
+		} else
+		{
+			while (fgets(buf, sizeof(buf), p) != NULL)
+			{
+				int i = strlen(buf);
+				/* strip trailing EOLs */
+				while (i > 0 && buf[i - 1] <= ' ')
+					i--;
+				buf[i] = '\0';
+				debug(D_RCPT, "sendmail output: %s", buf);
+				/*	From a quick scan of the sendmail source, a valid email
+					address gets printed via either
+					    "deliverable: mailer %s, host %s, user %s"
+					or  "deliverable: mailer %s, user %s"
+				*/
+				if (strstr(buf, "... deliverable: mailer "))
+				{
+					char *p=strstr(buf,", user ");
+					/* anything after ", user " is the email address */
+					debug(D_RCPT, "user: %s", p+7);
+					assassin->expandedrcpt.push_back(p+7);
+				}
+			}
+			pclose(p); p = NULL;
+		}
+#if defined(__FreeBSD__)
+		debug(D_FUNC, "unlocking mutex");
+		rv = pthread_mutex_unlock(&popen_mutex);
+		if (rv)
+		{
+			debug(D_ALWAYS, "Could not unlock popen mutex: %s", strerror(rv));
+			abort();
+		}		
+		debug(D_FUNC, "unlocked mutex");
+#endif
 	} else
 	{
-		while (fgets(buf, sizeof(buf), p) != NULL)
-		{
-			int i = strlen(buf);
-			/* strip trailing EOLs */
-			while (i > 0 && buf[i - 1] <= ' ')
-				i--;
-			buf[i] = '\0';
-			debug(D_RCPT, "sendmail output: %s", buf);
-			/*	From a quick scan of the sendmail source, a valid email
-				address gets printed via either
-				    "deliverable: mailer %s, host %s, user %s"
-				or  "deliverable: mailer %s, user %s"
-			*/
-			if (strstr(buf, "... deliverable: mailer "))
-			{
-				char *p=strstr(buf,", user ");
-				/* anything after ", user " is the email address */
-				debug(D_RCPT, "user: %s", p+7);
-				assassin->expandedrcpt.push_back(p+7);
-			}
-		}
-	}
+		assassin->expandedrcpt.push_back(envrcpt[0]);
+	}	
 	debug(D_RCPT, "Total of %d actual recipients", (int)assassin->expandedrcpt.size());
-	pclose(p); p = NULL;
-#if defined(__FreeBSD__)
-	debug(D_FUNC, "unlocking mutex");
-	rv = pthread_mutex_unlock(&popen_mutex);
-	if (rv)
-	{
-		debug(D_ALWAYS, "Could not unlock popen mutex: %s", strerror(rv));
-		abort();
-	}		
-	debug(D_FUNC, "unlocked mutex");
-#endif
 
 	if (assassin->numrcpt() == 0)
 	{
