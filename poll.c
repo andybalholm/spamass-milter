@@ -1,11 +1,16 @@
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
+#endif
 
 #include "subst_poll.h"
 
 /* This function pulled from Markus Gutschke's "wy60" package */
 
-/* $Id: poll.c,v 1.2 2003/03/06 21:40:49 dnelson Exp $ */
+/* $Id: poll.c,v 1.3 2003/03/11 03:40:27 dnelson Exp $ */
 
 int poll(struct pollfd *fds, unsigned long nfds, int timeout) {
   // This emulation function is somewhat limited. Most notably, it will never
