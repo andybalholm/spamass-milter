@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.69 2003/09/12 05:45:05 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.70 2003/10/21 21:40:32 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -88,15 +88,6 @@
 #include "subst_poll.h"
 #endif
 #include <errno.h>
-#ifndef HAVE_STRSEP
-#ifdef  __cplusplus
-extern "C" {
-#endif
-char *strsep(char **, const char *);
-#ifdef  __cplusplus
-}
-#endif
-#endif
 
 // C++ includes
 #include <cstdio>
@@ -116,6 +107,10 @@ extern "C" {
 char *strsep(char **stringp, const char *delim);
 #endif 
 
+#if !HAVE_DECL_DAEMON
+int daemon(int nochdir, int noclose);
+#endif 
+
 #ifdef  __cplusplus
 }
 #endif
@@ -132,7 +127,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.69 2003/09/12 05:45:05 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.70 2003/10/21 21:40:32 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -178,18 +173,17 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:mMr:u:D:i:b:B:e";
+   const char *args = "fd:mMp:P:r:u:D:i:b:B:e";
    char *sock = NULL;
    bool dofork = false;
+   char *pidfilename = NULL;
+   FILE *pidfile = NULL;
 
    openlog("spamass-milter", LOG_PID, LOG_MAIL);
 
 	/* Process command line options */
 	while ((c = getopt(argc, argv, args)) != -1) {
 		switch (c) {
-			case 'p':
-				sock = strdup(optarg);
-				break;
 			case 'f':
 				dofork = true;
 				break;
@@ -214,6 +208,12 @@ main(int argc, char* argv[])
 				dontmodify = true;
 				dontmodifyspam = true;
 				smfilter.xxfi_flags &= ~(SMFIF_CHGBODY|SMFIF_CHGHDRS);
+				break;
+			case 'p':
+				sock = strdup(optarg);
+				break;
+			case 'P':
+				pidfilename = strdup(optarg);
 				break;
 			case 'r':
 				flag_reject = true;
@@ -287,18 +287,37 @@ main(int argc, char* argv[])
       exit(EX_USAGE);
    }
 
-	if (dofork == true) {
-		switch(fork()) {
-         case -1: /* Uh-oh, we have a problem forking. */
-            fprintf(stderr, "Uh-oh, couldn't fork!\n");
-				exit(errno);
-				break;
-			case 0: /* Child */
-				break;
-			default: /* Parent */
-				exit(0);
+	if (pidfilename)
+	{
+		unlink(pidfilename);
+		pidfile = fopen(pidfilename,"w");
+		if (!pidfile)
+		{
+			fprintf(stderr, "Could not open pidfile: %s\n", strerror(errno));
+			exit(1);
+		}
+		/* leave the file open through the fork, since we don't know our pid
+		   yet
+		*/
+	}
+
+
+	if (dofork == true) 
+	{
+		if (daemon(0, 0) == -1)
+		{
+            fprintf(stderr, "daemon() failed: %s\n", strerror(errno));
+            exit(1);
 		}
 	}
+	
+	if (pidfile)
+	{
+		fprintf(pidfile, "%ld\n", (long)getpid());
+		fclose(pidfile);
+		pidfile = NULL;
+	}	
+	
    {
       struct stat junk;
       if (stat(sock,&junk) == 0) unlink(sock);
@@ -314,6 +333,8 @@ main(int argc, char* argv[])
 	debug(D_ALWAYS, "spamass-milter %s starting", PACKAGE_VERSION);
 	err = smfi_main();
 	debug(D_ALWAYS, "spamass-milter %s exiting", PACKAGE_VERSION);
+	if (pidfilename)
+		unlink(pidfilename);
 	return err;
 }
 

@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.35 2003/09/06 02:38:26 dnelson Exp $
+# $Id: configure.in,v 1.36 2003/10/21 21:40:32 dnelson Exp $
 AC_INIT(spamass-milter, 0.2.0+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.35 $)
+AC_REVISION($Revision: 1.36 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -100,9 +100,13 @@ AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 AC_SEARCH_LIBS(inet_aton, resolv)
 
-# check for strsep and verify that the system provides a prototype for it.
-AC_REPLACE_FUNCS(strsep)
-AC_CHECK_DECLS(strsep)
+# Check for functions and verify that the system provides a prototype for them.
+# Switch to C linkage.  Though the autoconf manual claims it does
+# automatically.  It lies.
+AC_LANG_PUSH(C)
+AC_REPLACE_FUNCS(strsep daemon)
+AC_CHECK_DECLS([strsep, daemon])
+AC_LANG_POP(C)
 
 # Check for libmilter and its header files in the usual locations
 if test -d /usr/lib/libmilter ; then
