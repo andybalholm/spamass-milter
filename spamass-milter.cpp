@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.26 2003/03/06 21:37:18 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.27 2003/03/07 04:33:24 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -108,7 +108,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.26 2003/03/06 21:37:18 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.27 2003/03/07 04:33:24 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -188,8 +188,8 @@ main(int argc, char* argv[])
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n" 
               "          use -1 to reject any messages tagged by SA." << endl;
-      cout << "   -u user: pass the recipient's username to spamc.  Use 'user'\n"
-              "          if there are multiple recipients." << endl;
+      cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
+              "          Uses 'defaultuser' if there are multiple recipients." << endl;
       exit(EX_USAGE);
    }
 

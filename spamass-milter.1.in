@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.7 2003/03/07 04:26:38 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.8 2003/03/07 04:33:24 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -13,7 +13,7 @@
 .Op Fl f
 .Op Fl m
 .Op Fl r Ar nn
-.Op Fl u Ar user
+.Op Fl u Ar defaultuser
 .Sh DESCRIPTION
 The
 .Nm
@@ -71,12 +71,12 @@ a separate folder just in case of false positives, you can use
 .Fl r Ar 15
 and reject flagrant spam outright while still receiving low-scoring
 messages.
-.It Fl u Ar user
+.It Fl u Ar defaultuser
 Pass the username part of the first recipient to spamc with the 
 .Fl u 
 flag.  This allows user preferences files to be used. If the message is
 addressed to multiple recipients, the username
-.Ar user
+.Ar defaultuser
 is passed instead.
 .Pp
 Note that 
