@@ -1,0 +1,88 @@
+#! /bin/sh
+#
+#  spamass-milter - init script for SuSE Linux
+#  mike gatny <mike@linuxbox.com>
+#  $Id: spamass-milter-suse.rc,v 1.1 2004/07/06 17:42:42 dnelson Exp $
+#
+### BEGIN INIT INFO
+# Provides:          spamass-milter
+# Required-Start:    $network
+# Should-Start:      
+# Required-Stop:     
+# Should-Stop: 
+# Default-Start:     3 5
+# Default-Stop:      0 1 2 6
+# Short-Description: spamass-milter
+# Description:       sendmail milter that connects to spamd
+### END INIT INFO
+
+# Socket must match the one specified in sendmail's config
+SPAMASS_SOCKET=/var/run/sendmail/spamass.sock
+
+# Optional arguments to spamass-milter
+SPAMASS_EXTRA_FLAGS=
+
+# Locate of the spamass-milter binary
+SPAMASS_BIN=/usr/local/sbin/spamass-milter
+[ -x $SPAMASS_BIN ] || echo "$SPAMASS_BIN not found"; 
+
+# Optional config
+SPAMASS_CONFIG=/etc/sysconfig/spamass-milter
+[ -f $SPAMASS_CONFIG ] && . $SPAMASS_CONFIG
+
+# Source LSB init functions
+. /etc/rc.status
+
+# Reset status of this service
+rc_reset
+
+# See how we were called
+case "$1" in
+    start)
+	echo -n "Starting spamass-milter "
+	startproc $SPAMASS_BIN -p ${SPAMASS_SOCKET} -f ${SPAMASS_EXTRA_FLAGS}
+	rc_status -v
+	;;
+
+    stop)
+	echo -n "Shutting down spamass-milter "
+	killproc -TERM $SPAMASS_BIN
+	rc_status -v
+	;;
+
+    try-restart|condrestart)
+	## Do a restart only if the service was active before.
+	## Note: try-restart is now part of LSB (as of 1.9).
+	## RH has a similar command named condrestart.
+	if test "$1" = "condrestart"; then
+		echo "${attn} Use try-restart ${done}(LSB)${attn} rather than condrestart ${warn}(RH)${norm}"
+	fi
+	$0 status
+	if test $? = 0; then
+		$0 restart
+	else
+		rc_reset	# Not running is not a failure.
+	fi
+	
+	rc_status
+	;;
+
+    restart)
+	$0 stop
+	sleep 1	
+	$0 start
+	rc_status
+	;;
+
+    status)
+	echo -n "Checking for service spamass-milter "
+	checkproc $SPAMASS_BIN
+	rc_status -v
+	;;
+
+    *)
+	echo "Usage: $0 {start|stop|status|try-restart|restart|}"
+	exit 1
+	;;
+esac
+rc_exit
