@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/etc/mail/bin/spamass-milter
+SOCKET=/var/run/sendmail/spamass.sock
+DESC="Sendmail milter plugin for SpamAssassin"
+
+test -x $DAEMON || exit 0
+
+set -e
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+
+	start-stop-daemon --start -b --exec $DAEMON --oknodo -- $SOCKET
+
+	echo "${DAEMON}"
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+
+	start-stop-daemon --stop --exec $DAEMON --oknodo 
+	/bin/sleep 5s
+	/bin/rm -f $SOCKET
+
+	echo "${DAEMON}"
+	;;
+  restart)
+	echo -n "Restarting $DESC: "
+
+	start-stop-daemon --stop --exec $DAEMON --oknod
+	/bin/sleep 5s
+	/bin/rm -f $SOCKET
+        start-stop-daemon --start -b --exec $DAEMON --oknodo -- $SOCKET
+
+        echo "${DAEMON}"
+
+	;;
+  *)
+	N=$0
+	echo "Usage: $N {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
