@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)strsep.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 /* $FreeBSD: src/lib/libc/string/strsep.c,v 1.5 2002/03/21 18:44:54 obrien Exp $ */
 
-/* $Id */
+/* $Id: strsep.c,v 1.3 2003/06/10 05:02:39 dnelson Exp $ */
 
 #include <string.h>
 #include <stdio.h>
