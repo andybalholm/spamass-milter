@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.55 2003/07/07 19:46:51 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.56 2003/07/17 02:28:35 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -130,7 +130,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.55 2003/07/07 19:46:51 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.56 2003/07/17 02:28:35 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -350,6 +350,9 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   string::size_type eoh2(assassin->d().find("\n\r\n"));
   string::size_type eoh = ( eoh1 < eoh2 ? eoh1 : eoh2 );
   string::size_type bob = assassin->d().find_first_not_of("\r\n", eoh);
+
+  if (bob == string::npos)
+  	bob = assassin->d().size();
 
   update_or_insert(assassin, ctx, assassin->spam_flag(), &SpamAssassin::set_spam_flag, "X-Spam-Flag");
   update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
