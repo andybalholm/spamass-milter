@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.11 2002/07/23 03:47:28 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.12 2002/07/23 03:48:09 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
