@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.34 2003/09/06 02:06:05 dnelson Exp $
+# $Id: configure.in,v 1.35 2003/09/06 02:38:26 dnelson Exp $
 AC_INIT(spamass-milter, 0.2.0+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.34 $)
+AC_REVISION($Revision: 1.35 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -119,12 +119,6 @@ AC_CHECK_LIB(milter, mi_stop,,[
 AC_CHECK_HEADERS(libmilter/mfapi.h,,[
 	AC_MSG_ERROR([Please install mfapi.h from the sendmail distribution])
 ])
-
-# This file doesn't exist in CVS but does in distributions.  Touch it so
-# ./configure doesn't complain
-if test ! -e spamass-milter.man.in ; then
- touch spamass-milter.man.in
-fi
 
 # Files to create from .in templates:
 AC_OUTPUT(Makefile contrib/spamass-milter.spec spamass-milter.1)
