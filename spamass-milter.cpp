@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.46 2003/06/12 22:41:34 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.47 2003/06/14 19:01:56 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -118,7 +118,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.46 2003/06/12 22:41:34 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.47 2003/06/14 19:01:56 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -651,57 +651,45 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 		assassin->set_numrcpt(1);
 		assassin->set_rcpt(string(envrcpt[0]));
 
-		// Check if the SPAMC program has already been run, if not we run it.
-		if ( !(assassin->connected) )
-		{
-			try {
-				assassin->connected = 1; // SPAMC is getting ready to run
-				assassin->Connect();
+		/* Send the envelope headers as X-Envelope-From: and
+		   X-Envelope-To: so that SpamAssassin can use them in its
+		   whitelist checks.  Also forge as complete a dummy
+		   Received: header as possible because SA gets a lot of
+		   info from it.
+		   
+			HReceived: $?sfrom $s $.$?_($?s$|from $.$_)
+				$.$?{auth_type}(authenticated$?{auth_ssf} bits=${auth_ssf}$.)
+				$.by $j ($v/$Z)$?r with $r$. id $i$?{tls_version}
+				(version=${tls_version} cipher=${cipher} bits=${cipher_bits} verify=${verify})$.$?u
+				for $u; $|;
+				$.$b$?g
+				(envelope-from $g)$.
+		   
+		*/
+		const char *macro_b, *macro_s;
 
-				/* Send the envelope headers as X-Envelope-From: and
-				   X-Envelope-To: so that SpamAssassin can use them in its
-				   whitelist checks.  Also forge as complete a dummy
-				   Received: header as possible because SA gets a lot of
-				   info from it.
-				   
-					HReceived: $?sfrom $s $.$?_($?s$|from $.$_)
-						$.$?{auth_type}(authenticated$?{auth_ssf} bits=${auth_ssf}$.)
-						$.by $j ($v/$Z)$?r with $r$. id $i$?{tls_version}
-						(version=${tls_version} cipher=${cipher} bits=${cipher_bits} verify=${verify})$.$?u
-						for $u; $|;
-						$.$b$?g
-						(envelope-from $g)$.
-				   
-				*/
-				const char *macro_b, *macro_s;
+		/* If the user did not enable the {b} macro in sendmail.cf
+		   just make it blank. Without this date SA can't do
+		   future/past validation on the Date: header */
+		macro_b = smfi_getsymval(ctx, "b");
+		if (!macro_b)
+			macro_b = "";
+			
+		/* Sendmail currently cannot pass us the {s} macro, but
+		   I do not know why.  Leave this in for the day sendmail is
+		   fixed.  Until that day, use the value remembered by
+		   mlfi_helo()
+		*/
+		macro_s = smfi_getsymval(ctx, "s");
+		if (!macro_s)
+			macro_s = sctx->helo;
+		if (!macro_s)
+			macro_s = "nohelo";
 
-				/* If the user did not enable the {b} macro in sendmail.cf
-				   just make it blank. Without this date SA can't do
-				   future/past validation on the Date: header */
-				macro_b = smfi_getsymval(ctx, "b");
-				if (!macro_b)
-					macro_b = "";
-					
-				/* Sendmail currently cannot pass us the {s} macro, but
-				   I do not know why.  Leave this in for the day sendmail is
-				   fixed.  Until that day, use the value remembered by
-				   mlfi_helo()
-				*/
-				macro_s = smfi_getsymval(ctx, "s");
-				if (!macro_s)
-					macro_s = sctx->helo;
-				if (!macro_s)
-					macro_s = "nohelo";
+		assassin->output((string)"X-Envelope-From: "+assassin->from()+"\r\n");
+		assassin->output((string)"X-Envelope-To: "+assassin->rcpt()+"\r\n");
+		assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+"; "+macro_b+"\r\n");
 
-				assassin->output((string)"X-Envelope-From: "+assassin->from()+"\r\n");
-				assassin->output((string)"X-Envelope-To: "+assassin->rcpt()+"\r\n");
-				assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+"; "+macro_b+"\r\n");
-			} 
-			catch (string& problem) {
-				throw_error(problem);
-				return SMFIS_TEMPFAIL;
-			};
-		}
 	} else
 	{
 		assassin->set_numrcpt();
@@ -731,6 +719,19 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
 {
   SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
   debug(D_FUNC, "mlfi_header: enter");
+
+  // Check if the SPAMC program has already been run, if not we run it.
+  if ( !(assassin->connected) )
+     {
+       try {
+         assassin->connected = 1; // SPAMC is getting ready to run
+         assassin->Connect();
+       } 
+       catch (string& problem) {
+         throw_error(problem);
+         return SMFIS_TEMPFAIL;
+       };
+     }
 
   // Is it a "X-Spam-" header field?
   if ( cmp_nocase_partial(string("X-Spam-"), string(headerf)) == 0 )
@@ -848,6 +849,7 @@ mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
 {
   debug(D_FUNC, "mlfi_body: enter");
   SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
+
  
   try {
     assassin->output(bodyp, bodylen);
@@ -1096,6 +1098,12 @@ void SpamAssassin::Connect()
   // we have to assume the client is running now.
   running=true;
 
+  /* If we have any buffered output, write it now. */
+  if (outputbuffer.size())
+  {
+    output(outputbuffer);
+    outputbuffer="";
+  }
 }
 
 // write to SpamAssassin
@@ -1107,8 +1115,19 @@ SpamAssassin::output(const void* buffer, long size)
   debug(D_SPAMC, "output \"%*.*s\"", (int)size, (int)size, (char *)buffer);
 
   // if there are problems, fail.
-  if (!running || error)
+  if (error)
     throw string("tried output despite problems. failed.");
+
+  /* If we haven't launched spamc yet, just store the data */
+  if (!connected)
+  {
+	/* Silly C++ can't tell the difference between 
+		(const char*, string::size_type) and
+		(string::size_type, char), so we have to cast the parameters.
+	*/
+  	outputbuffer.append((const char *)buffer,(string::size_type)size);
+  	return;
+  }
 
   // send to SpamAssassin
   long total(0), wsize(0);
