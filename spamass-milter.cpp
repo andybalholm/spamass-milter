@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.22 2002/12/31 20:03:13 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.23 2003/01/21 20:42:34 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -104,7 +104,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.22 2002/12/31 20:03:13 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.23 2003/01/21 20:42:34 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -756,10 +756,10 @@ void SpamAssassin::Connect()
         argv[argc++] = "-u";
         if ( numrcpt() != 1 )
         {
-          // More (or less?) than one recipient, so we pass the special
-          // username _multi_ to SPAMC.  This way special rules can be
-          // defined for multi recipient messages.
-          argv[argc++] = "_multi_"; 
+          // More (or less?) than one recipient, so we pass the default
+          // username to SPAMC.  This way special rules can be defined for
+          // multi recipient messages.
+          argv[argc++] = defaultuser; 
         } else
         { 
           // There is only 1 recipient so we pass the username to SPAMC 
