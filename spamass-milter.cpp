@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.40 2003/06/07 19:16:39 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.41 2003/06/09 17:19:25 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.40 2003/06/07 19:16:39 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.41 2003/06/09 17:19:25 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -135,21 +135,24 @@ const char *const debugstrings[] = {
 
 int flag_debug = (1<<D_ALWAYS);
 bool flag_reject = false;
-bool flag_sniffuser = false;
 int reject_score = -1;
 bool dontmodify = false;
+bool flag_sniffuser = false;
 char *defaultuser;
 char *spamdhost;
 struct networklist ignorenets;
 int spamc_argc;
 char **spamc_argv;
+bool flag_bucket = false;
+char *spambucket;
+
 // {{{ main()
 
 int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:mr:u:D:i:";
+   const char *args = "p:fd:mr:u:D:i:b:";
    char *sock = NULL;
    bool dofork = false;
 
@@ -176,6 +179,7 @@ main(int argc, char* argv[])
 				break;
 			case 'm':
 				dontmodify = true;
+				// smfilter.xxfi_flags &= ~SMFIF_CHGBODY;
 				break;
 			case 'r':
 				flag_reject = true;
@@ -184,6 +188,16 @@ main(int argc, char* argv[])
 			case 'u':
 				flag_sniffuser = true;
 				defaultuser = strdup(optarg);
+				break;
+			case 'b':
+				flag_bucket = true;
+				// we will modify the recipient list; if spamc returns
+				// indicating that this mail is spam, the message will be
+				// sent to <optarg>@localhost
+				smfilter.xxfi_flags |= SMFIF_ADDRCPT; // May add recipients
+				smfilter.xxfi_flags |= SMFIF_DELRCPT; // May delete recipients
+				// XXX we should probably verify that optarg is vaguely sane
+				spambucket = strdup( optarg );
 				break;
 			case '?':
 				err = 1;
@@ -198,8 +212,8 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-i networks]" << endl;
-      cout << "                      [-m] [-r nn] [-u defaultuser] [-- spamc args ]" << endl;
+      cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-i networks] [-m]" << endl;
+      cout << "                      [-r nn] [-u defaultuser] [-b bucket] [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
       cout << "   -D host: connect to spand at remote host (deprecated)" << endl;
@@ -211,11 +225,13 @@ main(int argc, char* argv[])
               "          use -1 to reject any messages tagged by SA." << endl;
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
               "          Uses 'defaultuser' if there are multiple recipients." << endl;
-      cout << "   -- spamc args: pass the remaining flags to spamc.\n" << endl;
+      cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
+      cout << "          recipient(s) will not receive anything." << endl;
+      cout << "   -- spamc args: pass the remaining flags to spamc." << endl;
               
       exit(EX_USAGE);
    }
-  
+
 	if (dofork == true) {
 		switch(fork()) {
          case -1: /* Uh-oh, we have a problem forking. */
@@ -232,7 +248,6 @@ main(int argc, char* argv[])
       struct stat junk;
       if (stat(sock,&junk) == 0) unlink(sock);
    }
-
 
    (void) smfi_setconn(sock);
 	if (smfi_register(smfilter) == MI_FAILURE) {
@@ -332,6 +347,32 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 		smfi_setreply(ctx, "550", "5.7.1", "Blocked by SpamAssassin");
 		return SMFIS_REJECT;
 	}
+  }
+
+  /* Drop the message into the spam bucket if it's spam */
+  if ( flag_bucket ) {
+        if ( assassin->spam_flag().size() > 0 ) {
+          // first, add the spambucket address
+          if ( smfi_addrcpt( ctx, spambucket ) != MI_SUCCESS ) {
+                throw string( "Failed to add spambucket to recipients" );
+          } else {
+                // Move recipients to a non-active header, one at a
+                // time. Note, this may generate multiple X-Spam-Orig-To
+                // headers, but that's okay.
+                while( !assassin->recipients.empty()) {
+                  if ( smfi_addheader( ctx, "X-Spam-Orig-To", (char *)assassin->recipients.front().c_str()) != MI_SUCCESS ) {
+                        throw string( "Failed to save recipient" );
+                  }
+
+                  // It's not 100% important that this succeeds, so we'll just warn on failure rather than bailing out.
+                  if ( smfi_delrcpt( ctx, (char *)assassin->recipients.front().c_str()) != MI_SUCCESS ) {
+                        // throw_error really just logs a warning as opposed to actually throw()ing
+                        throw_error( "Failed to remove recipient from the envelope" );
+                  }
+                  assassin->recipients.pop_front();
+                }
+          }
+        }
   }
 
   update_or_insert(assassin, ctx, assassin->spam_report(), &SpamAssassin::set_spam_report, "X-Spam-Report");
@@ -550,12 +591,13 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 // Gets called once for each recipient
 //
 // stores the first recipient in the spamassassin object and
-// discards the rest, keeping track of the number of recipients.
+// stores all addresses and the number thereof (some redundancy)
 //
 sfsistat
 mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 {
 	SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
+	char **rcpt;
 
 	if (assassin->numrcpt() == 0)
 	{
@@ -595,6 +637,10 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	} else
 	{
 		assassin->set_numrcpt();
+	}
+	for( rcpt = envrcpt; *rcpt; rcpt++ ) 
+	{
+		assassin->recipients.push_back( *rcpt ); // XXX verify that this worked
 	}
 	return SMFIS_CONTINUE;
 }
@@ -871,6 +917,12 @@ SpamAssassin::~SpamAssassin()
 			int status;
 			waitpid(pid, &status, 0);
 		}
+    }
+
+	// Clean up the recip list. Might be overkill, but it's good housekeeping.
+	while( !recipients.empty()) 
+	{
+		recipients.pop_front();
 	}
 }
 

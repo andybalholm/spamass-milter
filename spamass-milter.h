@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.13 2003/06/07 19:16:39 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.14 2003/06/09 17:19:25 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -25,6 +25,7 @@
 //   Contact:
 //            Michael Brown <michaelb@opentext.com>
 //
+#include <list>
 
 using namespace std;
 
@@ -130,6 +131,9 @@ public:
   
   // Counter to keep track of the number of recipients
   int    _numrcpt;
+
+  // The list of recipients for the current message
+  list <string> recipients;
 
   // Process handling variables
   pid_t pid;
