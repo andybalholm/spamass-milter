@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.10 2003/06/03 06:36:15 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.11 2003/06/06 16:05:08 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -53,6 +53,13 @@ struct networklist
 {
 	struct net *nets;
 	int num_nets;
+};
+
+// Debug tokens.
+enum debuglevel 
+{
+	D_ALWAYS, D_FUNC, D_POLL, D_UORI, D_STR, D_MISC, D_NET, D_SPAMC,
+	D_MAX // must be last
 };
 
 class SpamAssassin {
@@ -124,9 +131,10 @@ typedef string::size_type (SpamAssassin::*t_setter)(const string &val);
 int assassinate(SMFICTX*, SpamAssassin*);
 
 void throw_error(const string&);
-void debug(int level, const char* string, ...);
+void debug(enum debuglevel, const char* string, ...); /* __printflike(2, 3); */
 string::size_type find_nocase(const string&, const string&, string::size_type = 0);
 int cmp_nocase_partial(const string&, const string&);
 void closeall(int fd);
 void parse_networklist(char *string, struct networklist *list);
 int ip_in_networklist(struct in_addr ip, struct networklist *list);
+void parse_debuglevel(char* string);

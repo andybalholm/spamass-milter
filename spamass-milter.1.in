@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.10 2003/06/03 07:20:02 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.11 2003/06/06 16:05:08 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -8,7 +8,7 @@
 .Sh SYNOPSIS
 .Nm
 .Fl p Pa socket
-.Op Fl d Ar nn
+.Op Fl d Ar debugflags
 .Op Fl D Ar host
 .Op Fl f
 .Op Fl i Ar networks
@@ -33,19 +33,37 @@ will not be able to access the milter.  This may cause
 messages to bounce, queue, or be passed through unmiltered, depending
 on the parameters in
 .Nm sendmail Ns 's .cf file.
-.It Fl d Ar nn
-Sets the debug level:
+.It Fl d Ar debugflags
+Enables logging.  
+.Ar debugflags 
+is a comma-separated list of tokens:
 .Bl -tag -width "indent"
+.It func
+Entry and exit of internal functions.
+.It misc
+Other non-verbose logging.
+.It net
+Lookups of the ignored netblocks list.
+.It poll
+Low-level I/O to the child spamc process.
+.It spamc
+High-level I/O to the child spamc process.
+.It str
+Calls to field lookup and string comparison functions.
+.It uori
+Calls to the update_or_insert function.
 .It 1
-Log entry and exit of internal functions.
+(historical) Same as 
+.Dq func,misc .
 .It 2
-Also log I/O operations with 
-.Nm spamc .
+(historical) Same as
+.Dq func,misc,poll .
 .It 3
-Also log the results of string comparisons.
+(historical) Same as
+.Dq func,misc,poll,uori,str .
 .El
 .It Fl D Ar host
-Connects to a remost spamd server on 
+Connects to a remote spamd server on 
 .Ar host , 
 instead of using one on localhost.
 This option is deprecated; use 

@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.33 2003/06/06 15:43:06 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.34 2003/06/06 16:05:08 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.33 2003/06/06 15:43:06 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.34 2003/06/06 16:05:08 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -128,7 +128,12 @@ struct smfiDesc smfilter =
     mlfi_close, // connection cleanup callback
   };
 
-int flag_debug = 0;
+const char *const debugstrings[] = {
+	"ALL", "FUNC", "POLL", "UORI", "STR", "MISC", "NET", "SPAMC",
+	NULL
+};
+
+int flag_debug = (1<<D_ALWAYS);
 bool flag_reject = false;
 bool flag_sniffuser = false;
 int reject_score = -1;
@@ -160,13 +165,13 @@ main(int argc, char* argv[])
 				dofork = true;
 				break;
 			case 'd':
-				flag_debug = atoi(optarg);
+				parse_debuglevel(optarg);
 				break;
 			case 'D':
 				spamdhost = strdup(optarg);
 				break;
 			case 'i':
-				debug(1, "Parsing ignore list");
+				debug(D_MISC, "Parsing ignore list");
 				parse_networklist(optarg, &ignorenets);
 				break;
 			case 'm':
@@ -196,7 +201,7 @@ main(int argc, char* argv[])
       cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-i networks]" << endl;
       cout << "                      [-m] [-r nn] [-u defaultuser] [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
-      cout << "   -d nn: set debug level to nn (1-3).  Logs to syslog" << endl;
+      cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
       cout << "   -D host: connect to spand at remote host (deprecated)" << endl;
       cout << "   -f: fork into background" << endl;
       cout << "   -i: skip (ignore) checks from these IPs or netblocks" << endl;
@@ -234,11 +239,11 @@ main(int argc, char* argv[])
 		fprintf(stderr, "smfi_register failed\n");
 		exit(EX_UNAVAILABLE);
 	} else {
-      debug(1, "smfi_register succeeded");
+      debug(D_MISC, "smfi_register succeeded");
    }
-	debug(0, "spamass-milter %s starting", PACKAGE_VERSION);
+	debug(D_ALWAYS, "spamass-milter %s starting", PACKAGE_VERSION);
 	err = smfi_main();
-	debug(0, "spamass-milter %s exiting", PACKAGE_VERSION);
+	debug(D_ALWAYS, "spamass-milter %s exiting", PACKAGE_VERSION);
 	return err;
 }
 
@@ -254,11 +259,11 @@ void update_or_insert(SpamAssassin* assassin, SMFICTX* ctx, string oldstring, t_
 	string newstring;
 	string::size_type oldsize;
 
-	debug(3, "u_or_i: looking at <%s>", header);
-	debug(3, "u_or_i: oldstring: <%s>", oldstring.c_str());
+	debug(D_UORI, "u_or_i: looking at <%s>", header);
+	debug(D_UORI, "u_or_i: oldstring: <%s>", oldstring.c_str());
 
 	newstring = retrieve_field(assassin->d().substr(0, eoh), string(header));
-	debug(3, "u_or_i: newstring: <%s>", newstring.c_str());
+	debug(D_UORI, "u_or_i: newstring: <%s>", newstring.c_str());
 
 	oldsize = callsetter(*assassin,setter)(newstring);
       
@@ -267,18 +272,18 @@ void update_or_insert(SpamAssassin* assassin, SMFICTX* ctx, string oldstring, t_
 		/* change if old one was present, append if non-null */
 		if (oldsize > 0)
 		{
-			debug(3, "u_or_i: changing");
+			debug(D_UORI, "u_or_i: changing");
 			smfi_chgheader(ctx, header, 1, newstring.size() > 0 ? 
 				const_cast<char*>(newstring.c_str()) : NULL );
 		} else if (newstring.size() > 0)
 		{
-			debug(3, "u_or_i: inserting");
+			debug(D_UORI, "u_or_i: inserting");
 			smfi_addheader(ctx, header, 
 				const_cast<char*>(newstring.c_str()));
 		}
 	} else
 	{
-		debug(3, "u_or_i: no change");
+		debug(D_UORI, "u_or_i: no change");
 	}
 }
 
@@ -313,17 +318,17 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 		const char *spam_status = assassin->spam_status().c_str();
 		rv = sscanf(spam_status,"%*s hits=%d", &score);
 		if (rv != 1)
-			debug(0, "Could not extract score from <%s>", spam_status);
+			debug(D_ALWAYS, "Could not extract score from <%s>", spam_status);
 		else 
 		{
-			debug(1, "SA score: %d", score);
+			debug(D_MISC, "SA score: %d", score);
 			if (score >= reject_score)
 				do_reject = true;
 		}
 	}
 	if (do_reject)
 	{
-		debug(1, "Rejecting");
+		debug(D_MISC, "Rejecting");
 		smfi_setreply(ctx, "550", "5.7.1", "Blocked by SpamAssassin");
 		return SMFIS_REJECT;
 	}
@@ -370,7 +375,7 @@ retrieve_field(const string& header, const string& field)
   // return empty string if not found
   if (pos == string::npos)
   {
-    debug(3, "r_f: failed");
+    debug(D_STR, "r_f: failed");
     return string("");
   }
 
@@ -403,17 +408,17 @@ retrieve_field(const string& header, const string& field)
 sfsistat 
 mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 {
-	debug(1, "mlfi_connect: enter");
+	debug(D_FUNC, "mlfi_connect: enter");
 
 	if (ip_in_networklist(((struct sockaddr_in *) hostaddr)->sin_addr, &ignorenets))
 	{
-		debug(1, "%s is in our ignore list - accepting message",
+		debug(D_NET, "%s is in our ignore list - accepting message",
 		    inet_ntoa(((struct sockaddr_in *) hostaddr)->sin_addr));
-		debug(1, "mlfi_connect: exit");
+		debug(D_FUNC, "mlfi_connect: exit");
 		return SMFIS_ACCEPT;
 	}
 	// Tell Milter to continue
-	debug(1, "mlfi_connect: exit");
+	debug(D_FUNC, "mlfi_connect: exit");
 
 	return SMFIS_CONTINUE;
 }
@@ -430,7 +435,7 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 {
   SpamAssassin* assassin;
 
-  debug(1, "mlfi_envfrom: enter");
+  debug(D_FUNC, "mlfi_envfrom: enter");
   try {
     // launch new SpamAssassin
     assassin=new SpamAssassin;
@@ -444,7 +449,7 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
   smfi_setpriv(ctx, static_cast<void*>(assassin));
 
   // tell Milter to continue
-  debug(1, "mlfi_envfrom: exit");
+  debug(D_FUNC, "mlfi_envfrom: exit");
 
   return SMFIS_CONTINUE;
 }
@@ -488,7 +493,7 @@ sfsistat
 mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
-  debug(1, "mlfi_header: enter");
+  debug(D_FUNC, "mlfi_header: enter");
 
   // Check if the SPAMC program has already been run, if not we run it.
   if ( !(assassin->connected) )
@@ -530,7 +535,7 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
       
       if (suppress)
       {
-	debug(1, "mlfi_header: suppress");
+	debug(D_FUNC, "mlfi_header: suppress");
 	return SMFIS_CONTINUE;
       }
     };
@@ -555,12 +560,12 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
-      debug(1, "mlfi_header: exit");
+      debug(D_FUNC, "mlfi_header: exit");
       return SMFIS_TEMPFAIL;
     };
   
   // go on...
-  debug(1, "mlfi_header: exit");
+  debug(D_FUNC, "mlfi_header: exit");
 
   return SMFIS_CONTINUE;
 }
@@ -576,7 +581,7 @@ mlfi_eoh(SMFICTX* ctx)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
 
-  debug(1, "mlfi_eoh: enter");
+  debug(D_FUNC, "mlfi_eoh: enter");
 
   // Check if the SPAMC program has already been run, if not we run it.
   if ( !(assassin->connected) )
@@ -600,13 +605,13 @@ mlfi_eoh(SMFICTX* ctx)
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
   
-      debug(1, "mlfi_eoh: exit");
+      debug(D_FUNC, "mlfi_eoh: exit");
       return SMFIS_TEMPFAIL;
     };
   
   // go on...
 
-  debug(1, "mlfi_eoh: exit");
+  debug(D_FUNC, "mlfi_eoh: exit");
   return SMFIS_CONTINUE;
 }
 
@@ -618,7 +623,7 @@ mlfi_eoh(SMFICTX* ctx)
 sfsistat
 mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
 {
-  debug(1, "mlfi_body: enter");
+  debug(D_FUNC, "mlfi_body: enter");
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
  
   try {
@@ -628,12 +633,12 @@ mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
-      debug(1, "mlfi_body: exit");
+      debug(D_FUNC, "mlfi_body: exit");
       return SMFIS_TEMPFAIL;
     };
 
   // go on...
-  debug(1, "mlfi_body: exit");
+  debug(D_FUNC, "mlfi_body: exit");
   return SMFIS_CONTINUE;
 }
 
@@ -650,7 +655,7 @@ mlfi_eom(SMFICTX* ctx)
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
   int milter_status;
  
-  debug(1, "mlfi_eom: enter");
+  debug(D_FUNC, "mlfi_eom: enter");
   try {
 
     // close output pipe to signal EOF to SpamAssassin
@@ -670,12 +675,12 @@ mlfi_eom(SMFICTX* ctx)
       throw_error(problem);
       smfi_setpriv(ctx, static_cast<void*>(0));
       delete assassin;
-      debug(1, "mlfi_eom: exit");
+      debug(D_FUNC, "mlfi_eom: exit");
       return SMFIS_TEMPFAIL;
     };
   
   // go on...
-  debug(1, "mlfi_eom: exit");
+  debug(D_FUNC, "mlfi_eom: exit");
   return milter_status;
 }
 
@@ -685,7 +690,7 @@ mlfi_eom(SMFICTX* ctx)
 sfsistat
 mlfi_close(SMFICTX* ctx)
 {
-  debug(1, "mlfi_close");
+  debug(D_FUNC, "mlfi_close");
   return SMFIS_ACCEPT;
 }
 
@@ -700,7 +705,7 @@ mlfi_abort(SMFICTX* ctx)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
 
-  debug(1, "mlfi_abort");
+  debug(D_FUNC, "mlfi_abort");
   smfi_setpriv(ctx, static_cast<void*>(0));
   delete assassin;
 
@@ -850,7 +855,9 @@ void SpamAssassin::Connect()
 void
 SpamAssassin::output(const void* buffer, long size)
 {
-  debug(1, "::output enter");
+  debug(D_FUNC, "::output enter");
+
+  debug(D_SPAMC, "output \"%*.*s\"", (int)size, (int)size, (char *)buffer);
 
   // if there are problems, fail.
   if (!running || error)
@@ -868,22 +875,22 @@ SpamAssassin::output(const void* buffer, long size)
 	fds[1].fd = pipe_io[1][0];
 	fds[1].events = POLLIN;
 
-	debug(2, "polling fds %d and %d", pipe_io[0][1], pipe_io[1][0]);
+	debug(D_POLL, "polling fds %d and %d", pipe_io[0][1], pipe_io[1][0]);
 	nready = poll(fds, nfds, 1000);
 	if (nready == -1)
 		throw("poll failed");
 
-	debug(2, "poll returned %d, fd0=%d, fd1=%d", nready, fds[0].revents, fds[1].revents);
+	debug(D_POLL, "poll returned %d, fd0=%d, fd1=%d", nready, fds[0].revents, fds[1].revents);
 
 	if (fds[1].revents & POLLIN)
 	{
-		debug(2, "poll says I can read");
+		debug(D_POLL, "poll says I can read");
 		read_pipe();
 	}
 
 	if (fds[0].revents & POLLOUT)
 	{
-		debug(2, "poll says I can write");
+		debug(D_POLL, "poll says I can write");
 		switch(wsize = write(pipe_io[0][1], (char *)buffer + total, size - total))
 		{
 		  case -1:
@@ -911,13 +918,13 @@ SpamAssassin::output(const void* buffer, long size)
 			break;
 	      default:
 			total += wsize;
-			debug(2, "wrote %d bytes");
+			debug(D_POLL, "wrote %d bytes");
 			break;
 		}
 	}
   } while ( total < size );
 
-  debug(1, "::output exit");
+  debug(D_FUNC, "::output exit");
 }
 
 // close output pipe
@@ -932,7 +939,7 @@ SpamAssassin::close_output()
 void
 SpamAssassin::input()
 {
-	debug(1, "::input enter");
+	debug(D_FUNC, "::input enter");
   // if the child has exited or we experienced an error, return
   // immediately.
   if (!running || error)
@@ -951,7 +958,7 @@ SpamAssassin::input()
       error = true;
       throw string(string("waitpid error: ")+string(strerror(errno)));
     }; 
-	debug(1, "::input exit");
+	debug(D_FUNC, "::input exit");
 }
 
 //
@@ -1135,11 +1142,11 @@ SpamAssassin::read_pipe()
 	char iobuff[1024];
 	string reason;
 
-	debug(1, "::read_pipe enter");
+	debug(D_FUNC, "::read_pipe enter");
 
 	if (pipe_io[1][0] == -1)
 	{
-		debug(1, "::read_pipe exit - shouldn't have been called?");
+		debug(D_FUNC, "::read_pipe exit - shouldn't have been called?");
 		return 0;
 	}
 
@@ -1178,9 +1185,10 @@ SpamAssassin::read_pipe()
 	{ 
 		// append to mail buffer 
 		mail.append(iobuff, size);
-		debug(2, "read %d bytes");
+		debug(D_POLL, "read %ld bytes", size);
+		debug(D_SPAMC, "input  \"%*.*s\"", (int)size, (int)size, iobuff);
 	}
-	debug(1, "::read_pipe exit");
+	debug(D_FUNC, "::read_pipe exit");
 	return size;
 }
 
@@ -1191,10 +1199,10 @@ SpamAssassin::read_pipe()
 void
 SpamAssassin::empty_and_close_pipe()
 {
-	debug(1, "::empty_and_close_pipe enter");
+	debug(D_FUNC, "::empty_and_close_pipe enter");
 	while (read_pipe())
 		;
-	debug(1, "::empty_and_close_pipe exit");
+	debug(D_FUNC, "::empty_and_close_pipe exit");
 }
 
 // }}}
@@ -1211,9 +1219,61 @@ throw_error(const string& errmsg)
     syslog(LOG_ERR, "Unknown error");
 }
 
-void debug(int level, const char* string, ...)
+/* Takes a comma or space-delimited string of debug tokens and sets the
+   appropriate bits in flag_debug.  "all" sets all the bits.
+*/
+void parse_debuglevel(char* string)
 {
-	if (flag_debug >= level)
+	char *token;
+
+	/* handle the old numeric values too */
+	switch(atoi(string))
+	{
+		case 3:
+			flag_debug |= (1<<D_UORI) | (1<<D_STR);
+		case 2:
+			flag_debug |= (1<<D_POLL);
+		case 1:
+			flag_debug |= (1<<D_MISC) | (1<<D_FUNC);
+			debug(D_ALWAYS, "Setting debug level to 0x%0x", flag_debug);
+			return;
+		default:
+			break;
+	}
+
+	while ((token = strsep(&string, ", ")))
+	{
+		int i;
+		for (i=0; debugstrings[i]; i++)
+		{
+			if(strcasecmp(token, "ALL")==0)
+			{
+				flag_debug = (1<<D_MAX)-1;
+				break;
+			}
+			if(strcasecmp(token, debugstrings[i])==0)
+			{
+				flag_debug |= (1<<i);
+				break;
+			}
+		}
+
+		if (!debugstrings[i])
+		{
+			fprintf(stderr, "Invalid debug token \"%s\"\n", token);
+			exit(1);
+		}
+	}
+	debug(D_ALWAYS, "Setting debug level to 0x%0x", flag_debug);
+}
+
+/*
+   Output a line to syslog using print format, but only if the appropriate
+   debug level is set.  The D_ALWAYS level is always enabled.
+*/
+void debug(enum debuglevel level, const char* string, ...)
+{
+	if ((1<<level) & flag_debug)
 	{
 #if defined(HAVE_VSYSLOG)
 	    va_list vl;
@@ -1263,7 +1323,7 @@ find_nocase(const string& array, const string& pattern, string::size_type start)
 	  ++ctr;
 	  if (ctr == pattern.size())
 	  {
-	    debug(3, "f_nc: <%s><%s>: hit", array.c_str(), pattern.c_str());
+	    debug(D_STR, "f_nc: <%s><%s>: hit", array.c_str(), pattern.c_str());
 	    return pos;
 	  }
 	};
@@ -1271,7 +1331,7 @@ find_nocase(const string& array, const string& pattern, string::size_type start)
       ++pos;
     };
 
-  debug(3, "f_nc: <%s><%s>: nohit", array.c_str(), pattern.c_str());
+  debug(D_STR, "f_nc: <%s><%s>: nohit", array.c_str(), pattern.c_str());
   return string::npos;
 }
 
@@ -1285,14 +1345,14 @@ cmp_nocase_partial(const string& s, const string& s2)
   while ( p != s.end() && p2 != s2.end() ) {
     if (toupper(*p) != toupper(*p2))
     {
-      debug(3, "c_nc_p: <%s><%s> : miss", s.c_str(), s2.c_str());
+      debug(D_STR, "c_nc_p: <%s><%s> : miss", s.c_str(), s2.c_str());
       return (toupper(*p) < toupper(*p2)) ? -1 : 1;
     }
     ++p;
     ++p2;
   };
 
-  debug(3, "c_nc_p: <%s><%s> : hit", s.c_str(), s2.c_str());
+  debug(D_STR, "c_nc_p: <%s><%s> : hit", s.c_str(), s2.c_str());
   return 0;
 
 }
@@ -1348,7 +1408,7 @@ void parse_networklist(char *string, struct networklist *list)
 
 		{
 			char *snet = strdup(inet_ntoa(net));
-			debug(1, "Adding %s/%s to network list", snet, inet_ntoa(mask));
+			debug(D_MISC, "Adding %s/%s to network list", snet, inet_ntoa(mask));
 			free(snet);
 		}
 
@@ -1363,14 +1423,14 @@ int ip_in_networklist(struct in_addr ip, struct networklist *list)
 {
 	int i;
 
-	debug(2, "Checking %s against:", inet_ntoa(ip));
+	debug(D_NET, "Checking %s against:", inet_ntoa(ip));
 	for (i = 0; i < list->num_nets; i++)
 	{
-		debug(2, "%s", inet_ntoa(list->nets[i].network));
-		debug(2, "/%s", inet_ntoa(list->nets[i].netmask));
+		debug(D_NET, "%s", inet_ntoa(list->nets[i].network));
+		debug(D_NET, "/%s", inet_ntoa(list->nets[i].netmask));
 		if ((ip.s_addr & list->nets[i].netmask.s_addr) == list->nets[i].network.s_addr)
         {
-        	debug(2, "Hit!");
+        	debug(D_NET, "Hit!");
 			return 1;
 		}
 	}
