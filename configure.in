@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.12 2002/09/23 05:39:32 dnelson Exp $
+# $Id: configure.in,v 1.13 2002/11/15 03:22:38 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.2+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.12 $)
+AC_REVISION($Revision: 1.13 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -42,7 +42,9 @@ AC_SEARCH_LIBS(connect, socket)
 AC_SEARCH_LIBS(inet_aton, resolv)
 
 # Check for libmilter and its header files in the usual locations
-LDFLAGS="$LDFLAGS -L/usr/lib/libmilter"
+if test -d /usr/lib/libmilter ; then
+	LDFLAGS="$LDFLAGS -L/usr/lib/libmilter"
+fi
 AC_CHECK_LIB(milter, mi_stop,,[
 	# Older sendmails require libsm for support functions
 	AC_SEARCH_LIBS(strlcpy, sm smutil)
