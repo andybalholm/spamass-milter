@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.5 2002/07/23 02:02:12 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.6 2002/11/15 07:04:16 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -92,6 +92,10 @@ public:
   
 };
 
+/* This hack is the only way to call pointers to member functions! */
+typedef string::size_type (SpamAssassin::*t_setter)(const string &val);
+#define callsetter(object, ptrToMember)  ((object).*(ptrToMember))
+       
 void assassinate(SMFICTX*, SpamAssassin*);
 
 void throw_error(const string&);
