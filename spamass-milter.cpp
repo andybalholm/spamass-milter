@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.41 2003/06/09 17:19:25 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.42 2003/06/10 03:03:17 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.41 2003/06/09 17:19:25 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.42 2003/06/10 03:03:17 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -144,6 +144,7 @@ struct networklist ignorenets;
 int spamc_argc;
 char **spamc_argv;
 bool flag_bucket = false;
+bool flag_bucket_only = false;
 char *spambucket;
 
 // {{{ main()
@@ -152,7 +153,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:mr:u:D:i:b:";
+   const char *args = "p:fd:mr:u:D:i:b:B:";
    char *sock = NULL;
    bool dofork = false;
 
@@ -190,12 +191,23 @@ main(int argc, char* argv[])
 				defaultuser = strdup(optarg);
 				break;
 			case 'b':
+			case 'B':
+				if (flag_bucket)
+				{
+					printf(stderr, "Can only have one -b or -B flag\n");
+					err = 1;
+					break;
+				}
 				flag_bucket = true;
+				if (c == 'b')
+				{
+					flag_bucket_only = true;
+					smfilter.xxfi_flags |= SMFIF_DELRCPT; // May delete recipients
+				}
 				// we will modify the recipient list; if spamc returns
 				// indicating that this mail is spam, the message will be
 				// sent to <optarg>@localhost
 				smfilter.xxfi_flags |= SMFIF_ADDRCPT; // May add recipients
-				smfilter.xxfi_flags |= SMFIF_DELRCPT; // May delete recipients
 				// XXX we should probably verify that optarg is vaguely sane
 				spambucket = strdup( optarg );
 				break;
@@ -213,7 +225,7 @@ main(int argc, char* argv[])
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
       cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-i networks] [-m]" << endl;
-      cout << "                      [-r nn] [-u defaultuser] [-b bucket] [-- spamc args ]" << endl;
+      cout << "                      [-r nn] [-u defaultuser] [-b|-B bucket ] [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
       cout << "   -D host: connect to spand at remote host (deprecated)" << endl;
@@ -227,6 +239,7 @@ main(int argc, char* argv[])
               "          Uses 'defaultuser' if there are multiple recipients." << endl;
       cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
       cout << "          recipient(s) will not receive anything." << endl;
+      cout << "   -B bucket: add this mail address as a BCC recipient of spam." << endl;
       cout << "   -- spamc args: pass the remaining flags to spamc." << endl;
               
       exit(EX_USAGE);
@@ -355,7 +368,8 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
           // first, add the spambucket address
           if ( smfi_addrcpt( ctx, spambucket ) != MI_SUCCESS ) {
                 throw string( "Failed to add spambucket to recipients" );
-          } else {
+          }
+          if (flag_bucket_only) {
                 // Move recipients to a non-active header, one at a
                 // time. Note, this may generate multiple X-Spam-Orig-To
                 // headers, but that's okay.

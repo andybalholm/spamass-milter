@@ -1,17 +1,13 @@
-$Id: TODO,v 1.3 2003/06/09 21:24:03 dnelson Exp $
+$Id: TODO,v 1.4 2003/06/10 03:03:17 dnelson Exp $
 
-Clean up the reject/copy to spambox/deliver to recipient options:
+*DONE* Clean up the reject/copy to spambox/deliver to recipient options:
 
 	         R  C  P
 	
 	-r       Y  -  -
-	none     N  Y  Y
-	-b       N  Y  N
+	-B addr  N  Y  Y
+	-b addr  N  Y  N
 	default  N  N  Y
 	-b null  N  N  N
 	
-	With the current flags there is no way to simply add the
-	spambox to the list of recipients.  You can silently drop by
-	using -b to redirect to a /dev/null sendmail alias.
-
 Try and expand aliases before checking for -u usernames
