@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.9 2003/06/03 06:24:54 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.10 2003/06/03 07:20:02 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -63,7 +63,8 @@ is a comma-separated list, where each element can be either an IP address
 (nnn.nnn.nnn.nnn), a CIDR network (nnn.nnn.nnn.nnn/nn), or a network/netmask
 pair (nnn.nnn.nnn.nnn/nnn.nnn.nnn.nnn).  Multiple
 .Fl i
-flags will append to the list.
+flags will append to the list.  If you list all your internal
+netblocks, no outgoing emails will be filtered.
 .It Fl m
 Disables modification of the Subject: and Content-Type: headers and
 message body. This is useful when SpamAssassin is configured with

@@ -1,4 +1,9 @@
-$Id: NEWS,v 1.8 2002/12/31 20:17:31 dnelson Exp $
+$Id: NEWS,v 1.9 2003/06/03 07:20:02 dnelson Exp $
+
+unreleased
+ * -i option to not run spamassassin on messages coming from internal
+   networks.
+ * pass all arguments after -- to spamc (deprecate -D at the same time).
 
 0.1.3a: (2002-12-31)
  * Fixed hanging problem when processing a message with no headers at
