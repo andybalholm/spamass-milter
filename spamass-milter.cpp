@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.10 2002/07/23 03:34:00 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.11 2002/07/23 03:47:28 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -299,35 +299,44 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   //  Content-Type:
   //  <Body>
   // 
+  //  However, only issue the header replacement calls if the content has
+  //  actually changed. If SA didn't change subject or content-type, don't
+  //  replace here unnecessarily.
   if (assassin->spam_flag().size()>0)
     {
+      string oldstring;
+      string newstring;
 
       // Subject header //
       // find it:
-      old = assassin->set_subject(retrieve_field(assassin->d().substr(0, eoh), 
-						 string("Subject")));
+      oldstring = retrieve_field(assassin->d().substr(0, eoh), string("Subject"));
+      newstring = assassin->subject();
+
+      old = assassin->set_subject(oldstring);
       
       // change if old one was present, append if non-null
-      if (old > 0)
-	smfi_chgheader(ctx,"Subject",1,assassin->subject().size() > 0 ? 
-		       const_cast<char*>(assassin->subject().c_str()) : NULL );
-      else if (assassin->subject().size()>0)
+      if (old > 0 && newstring != oldstring)
+	smfi_chgheader(ctx,"Subject",1,newstring.size() > 0 ? 
+		       const_cast<char*>(newstring.c_str()) : NULL );
+      else if (newstring.size()>0)
 	smfi_addheader(ctx, "Subject", 
-		       const_cast<char*>(assassin->subject().c_str()));
+		       const_cast<char*>(newstring.c_str()));
       
 
       // Content-Type header //
       // find it:
-      old = assassin->set_content_type(retrieve_field(assassin->d().substr(0, eoh), 
-						      string("Content-Type")));
+      oldstring = retrieve_field(assassin->d().substr(0, eoh), string("Content-Type"));
+      newstring = assassin->content_type();
+
+      old = assassin->set_content_type(oldstring);
       
       // change if old one was present, append if non-null
-      if (old > 0)
-	smfi_chgheader(ctx,"Content-Type",1,assassin->content_type().size() > 0 ? 
-		       const_cast<char*>(assassin->content_type().c_str()) : NULL );
+      if (old > 0 && newstring != oldstring)
+	smfi_chgheader(ctx,"Content-Type",1,newstring.size() > 0 ? 
+		       const_cast<char*>(newstring.c_str()) : NULL );
       else if (assassin->content_type().size()>0)
 	smfi_addheader(ctx, "Content-Type", 
-		       const_cast<char*>(assassin->content_type().c_str()));
+		       const_cast<char*>(newstring.c_str()));
       
       
       // Replace body with the one SpamAssassin provided //
