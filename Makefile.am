@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.18 2003/09/05 16:42:35 dnelson Exp $
+## $Id: Makefile.am,v 1.19 2003/09/06 02:15:34 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
@@ -8,7 +8,7 @@ CLEANFILES = *~ .deps/* .libs/* .deps .libs spamass-milter.man
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in \
 	config.log config.status configure configure.lineno stamp-h.in \
 	COPYING INSTALL config.guess config.sub install-sh missing mkinstalldirs \
-	spamass-milter.man.in $(distdir).tar.gz $(distdir).tar.bz2
+	$(distdir).tar.gz $(distdir).tar.bz2
 maintainer-clean-local:
 	rm -rf autom4te* $(distdir)
 distclean-local:
