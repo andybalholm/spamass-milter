@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.11 2003/06/06 16:05:08 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.12 2003/06/09 17:16:36 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -7,7 +7,7 @@
 .Nd sendmail milter for passing emails through SpamAssassin
 .Sh SYNOPSIS
 .Nm
-.Fl p Pa socket
+.Fl p Ar socket
 .Op Fl d Ar debugflags
 .Op Fl D Ar host
 .Op Fl f
@@ -24,7 +24,7 @@ messages with SpamAssassin.
 .Pp
 The following options are available:
 .Bl -tag -width "indent"
-.It Fl p Pa socket
+.It Fl p Ar socket
 Specifies the pathname of a socket to create for communication with
 .Nm sendmail .
 If it is removed,
@@ -54,13 +54,13 @@ Calls to field lookup and string comparison functions.
 Calls to the update_or_insert function.
 .It 1
 (historical) Same as 
-.Dq func,misc .
+.Ar func,misc .
 .It 2
 (historical) Same as
-.Dq func,misc,poll .
+.Ar func,misc,poll .
 .It 3
 (historical) Same as
-.Dq func,misc,poll,uori,str .
+.Ar func,misc,poll,str,uori .
 .El
 .It Fl D Ar host
 Connects to a remote spamd server on 
@@ -81,14 +81,21 @@ is a comma-separated list, where each element can be either an IP address
 (nnn.nnn.nnn.nnn), a CIDR network (nnn.nnn.nnn.nnn/nn), or a network/netmask
 pair (nnn.nnn.nnn.nnn/nnn.nnn.nnn.nnn).  Multiple
 .Fl i
-flags will append to the list.  If you list all your internal
-netblocks, no outgoing emails will be filtered.
+flags will append to the list.  For example, if you list all your
+internal networks, no outgoing emails will be filtered.
 .It Fl m
-Disables modification of the Subject: and Content-Type: headers and
+Disables modification of the 
+.Ql Subject: 
+and 
+.Ql Content-Type: 
+headers and
 message body. This is useful when SpamAssassin is configured with
-defang_mime 0 and report_header 1, or when SA is simply used to add
-headers for postprocessing later.  Updating the body through the milter
-interface can be slow for large messages.
+.Ql "defang_mime 0"
+and 
+.Ql "report_header 1" ,
+or when SA is simply used to add headers for postprocessing later. 
+Updating the body through the milter interface can be slow for large
+messages.
 .It Fl r Ar nn
 Reject scanned email if it greater than or equal to
 .Ar nn .
@@ -99,7 +106,7 @@ are also using the
 .Fl u
 flag, and users have changed their required_hits value).
 .Pp
-For example: if you usually use procmail to redirect tagged email into
+For example, if you usually use procmail to redirect tagged email into
 a separate folder just in case of false positives, you can use
 .Fl r Ar 15
 and reject flagrant spam outright while still receiving low-scoring
@@ -115,7 +122,11 @@ is passed instead.
 Note that 
 .Nm
 does not know whether an email is incoming or outgoing, so a message
-from user1@localdomain.com to user2@yahoo.com will make 
+from
+.Aq user1@localdomain.com 
+to 
+.Aq user2@yahoo.com 
+will make 
 .Nm
 pass 
 .Fl u Ar user2
