@@ -1,4 +1,4 @@
-$Id: TODO,v 1.9 2003/08/28 14:59:17 dnelson Exp $
+$Id: TODO,v 1.10 2004/03/18 19:04:26 dnelson Exp $
 
 *DONE* Clean up the Reject/Copy to spambox/Deliver to recipient options:
 
@@ -24,3 +24,4 @@ Allow customized reject message with -r.
 Option 1 - new flag.  -R "go away"
 Option 2 - overload -r.  -r "20,go away"
 
+Fix ipv6 crashes
