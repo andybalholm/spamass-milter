@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.31 2003/06/04 19:41:06 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.32 2003/06/05 21:18:01 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.31 2003/06/04 19:41:06 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.32 2003/06/05 21:18:01 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -199,7 +199,7 @@ main(int argc, char* argv[])
       cout << "   -d nn: set debug level to nn (1-3).  Logs to syslog" << endl;
       cout << "   -D host: connect to spand at remote host (deprecated)" << endl;
       cout << "   -f: fork into background" << endl;
-      cout << "   -i: skip (ignore) mail from these IPs or netblocks" << endl;
+      cout << "   -i: skip (ignore) checks from these IPs or netblocks" << endl;
       cout << "       example: -i 192.168.12.5,10.0.0.0/8,172.16/255.255.0.0" << endl;
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n"
