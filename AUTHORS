@@ -1,9 +1,17 @@
-$Id: AUTHORS,v 1.1 2002/01/16 20:33:21 greve Exp $
+$Id: AUTHORS,v 1.2 2002/03/06 13:07:07 greve Exp $
 
 SpamAssassin Sendmail Mail Filter (Milter) Plugin 
 -------------------------------------------------
 
+Current Maintainer:
+	Michael Brown <michaelb@opentext.com>
+
+
 Authors:
-
 	Georg C. F. Greve <greve@gnu.org>
+	Michael Brown <michaelb@opentext.com>
 
+
+Bugfixes/reports contributed by:
+	Mikhail Teterin <mi@corbulon.video-collage.com>
+	Michael Brown <michaelb@opentext.com>

@@ -1,3 +1,6 @@
+ * Appointed Michael Brown <michaelb@opentext.com> as new maintainer
+ * Some small bugfixes
+
 0.1.1:
  * Added SpamAssassin 2.0+ field "X-Spam-Checker-Version"
  * Changed behaviour as follows:

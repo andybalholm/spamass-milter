@@ -1,3 +1,19 @@
+2002-03-06  Georg C. F. Greve  <greve@gnu.org>
+
+	* Appointed Michael Brown <michaelb@opentext.com> new maintainer of spamass-milter
+	
+	* Transferred all rights to the FSF Europe - http://fsfeurope.org
+
+	* spamass-milter.h: Added copyright & license notice
+
+	* contrib/spamass-milter: Added copyright & license notice
+
+	* spamass-milter.cpp: Applied bugfix suggested by
+	                      Mikhail Teterin <mi@corbulon.video-collage.com> 
+			      
+	                      Applied bugfix suggested by
+	                      Michael Brown <michaelb@opentext.com>
+
 2002-01-31  Georg C. F. Greve  <greve@gnu.org>
 
 	* spamass-milter.cpp (set_spam_checker_version): see below

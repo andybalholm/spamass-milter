@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.5 2002/01/31 15:34:43 greve Exp $
+//  $Id: spamass-milter.cpp,v 1.6 2002/03/06 13:07:07 greve Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -11,9 +11,10 @@
 //  for information about Sendmail please see
 //                        http://www.sendmail.org
 //
-//  Copyright (c) 2002 Georg C. F. Greve <greve@gnu.org>
+//  Copyright (c) 2002 Georg C. F. Greve <greve@gnu.org>,
+//   all rights maintained by FSF Europe e.V., 
+//   Villa Vogelsang, Antonienallee 1, 45279 Essen, Germany
 //
-// Add tracking of X-Spam-Checker-Version: flag!
 
 // {{{ License, Contact, Notes & Includes 
 
@@ -32,7 +33,7 @@
 //   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 //   Contact:
-//            
+//            Michael Brown <michaelb@opentext.com>
 //
 
 // Notes:
@@ -409,7 +410,7 @@ mlfi_eoh(SMFICTX* ctx)
 
   try {
     // add blank line between header and body
-    assassin->output("\r\n",2);
+    assassin->output("\n\n",2);
   } catch (string& problem)
     {
       throw_error(problem);
@@ -618,7 +619,7 @@ SpamAssassin::output(const void* buffer, long size)
   string reason;
   int status;
   do {
-    switch(wsize=write(pipe_io[0][1], buffer, size-total))
+    switch(wsize=write(pipe_io[0][1], (const char *)buffer+total, size-total))
       {
       case -1:
 	reason = string(strerror(errno));
@@ -803,8 +804,8 @@ void
 SpamAssassin::empty_and_close_pipe()
 {
   long size;
-  char iobuff[1025];
   int  status;
+  char iobuff[1024];
   string reason;
 
   do {
@@ -844,10 +845,11 @@ SpamAssassin::empty_and_close_pipe()
 	pipe_io[1][0]=-1;
 	
       }
-    
-    // append to mail buffer 
-    iobuff[size]=0;
-    mail+=string(iobuff);
+    else
+      { 
+	// append to mail buffer 
+	mail.append(iobuff, size);
+      }
     
   } while (size > 0);
 
