@@ -6,7 +6,7 @@
  * Fixed the "250K deadlock" bug.
  * Subject and Content-Types headers are only replaced if they changed. 
    This makes /var/log/maillog a bit cleaner for servers that get mail
-   the has already been run through SpamAssassin.  The mail is still
+   that has already been run through SpamAssassin.  The mail is still
    checked, so you can't bypass anything by adding SA headers.
  * Added SpamAssassin field "X-Spam-Level".
  * Added a manpage.
