@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.9 2003/06/03 06:24:54 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.10 2003/06/03 06:36:15 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -43,7 +43,7 @@ sfsistat mlfi_abort(SMFICTX*);
 
 extern struct smfiDesc smfilter;
 
-struct network 
+struct net
 {
 	struct in_addr network;
 	struct in_addr netmask;
@@ -51,7 +51,7 @@ struct network
 
 struct networklist
 {
-	struct network *nets;
+	struct net *nets;
 	int num_nets;
 };
 
