@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.75 2004/03/18 18:37:08 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.76 2004/05/10 18:59:32 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.75 2004/03/18 18:37:08 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.76 2004/05/10 18:59:32 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -802,22 +802,14 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	{
 		/* open a pipe to sendmail so we can do address expansion */
 
-#if defined(HAVE_ASPRINTF)
-		char *buf;
-#else
 		char buf[1024];
-#endif
 		char *fmt="%s -bv \"%s\" 2>&1";
 
-#if defined(HAVE_ASPRINTF)
-		asprintf(&buf, fmt, SENDMAIL, envrcpt[0]);
-#else
 #if defined(HAVE_SNPRINTF)
 		snprintf(buf, sizeof(buf)-1, fmt, SENDMAIL, envrcpt[0]);
 #else
 		/* XXX possible buffer overflow here */
 		sprintf(buf, fmt, SENDMAIL, envrcpt[0]);
-#endif
 #endif
 
 		debug(D_RCPT, "calling %s", buf);
@@ -869,9 +861,6 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 			abort();
 		}		
 #endif
-#if defined(HAVE_ASPRINTF)
-		free(buf);
-#endif 
 	} else
 	{
 		assassin->expandedrcpt.push_back(envrcpt[0]);
