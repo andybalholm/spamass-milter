@@ -1,5 +1,18 @@
- * Appointed Michael Brown <michaelb@opentext.com> as new maintainer
- * Some small bugfixes
+0.1.2:
+
+ * Many portability fixes.  Should build on any *BSD, Linux, Solaris,
+   or Tru64 box, with any milter-compatible sendmail, with any
+   compiler.
+ * Fixed the "250K deadlock" bug.
+ * Subject and Content-Types headers are only replaced if they changed. 
+   This makes /var/log/maillog a bit cleaner for servers that get mail
+   the has already been run through SpamAssassin.  The mail is still
+   checked, so you can't bypass anything by adding SA headers.
+ * Added SpamAssassin field "X-Spam-Level".
+ * Added a manpage.
+ * Added RedHat spec files.
+ * -f option forks the milter into the background.
+ * -d debugging option.
 
 0.1.1:
  * Added SpamAssassin 2.0+ field "X-Spam-Checker-Version"
