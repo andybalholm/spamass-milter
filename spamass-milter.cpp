@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.27 2003/03/07 04:33:24 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.28 2003/06/03 02:08:42 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -108,7 +108,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.27 2003/03/07 04:33:24 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.28 2003/06/03 02:08:42 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -180,7 +180,8 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-m] [-r nn] [-u user]" << endl;
+      cout << "Usage: spamass-milter -p socket [-d nn] [-D host] [-f] [-m] [-r nn]" << endl;
+      cout << "                      [-u defaultuser]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -d nn: set debug level to nn (1-3).  Logs to syslog" << endl;
       cout << "   -D host: connect to spand at remote host" << endl;

@@ -1,14 +1,14 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.10 2003/03/06 21:37:18 dnelson Exp $
+## $Id: Makefile.am,v 1.11 2003/06/03 02:08:42 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign
 
-CLEANFILES = *~ .deps/* .libs/* .deps .libs 
+CLEANFILES = *~ .deps/* .libs/* .deps .libs spamass-milter.man
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in \
 	config.log config.status configure configure.lineno stamp-h.in \
 	COPYING INSTALL config.guess config.sub install-sh missing mkinstalldirs
 maintainer-clean-local:
-	rm -rf autom4te.cache $(distdir) $(distdir).tar.gz
+	rm -rf autom4te* $(distdir) $(distdir).tar.gz
 distclean-local:
 	rm -f configure.lineno
 
@@ -22,7 +22,14 @@ dist-hook:
 changelog:
 	cvs2cl --no-wrap -S -U contrib/users 
 
+.1.man: mdoc2man.awk
+	$(AWK) -f mdoc2man.awk $< > $@
+
+if HAVE_MDOC
 man_MANS = 	spamass-milter.1
+else
+man1_MANS = 	spamass-milter.man
+endif
 sbin_PROGRAMS =	spamass-milter
 DEB_CONTRIB =	contrib/spamass-milter
 RH_CONTRIB =	contrib/spamass-milter-redhat.rc \

@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.21 2003/03/11 03:40:27 dnelson Exp $
+# $Id: configure.in,v 1.22 2003/06/03 02:08:42 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.3a+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.21 $)
+AC_REVISION($Revision: 1.22 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -20,6 +20,26 @@ if test "x$SPAMC" = x ; then
    AC_MSG_ERROR([Spamc not found. Is SpamAssassin installed?])
 fi
 AC_DEFINE_UNQUOTED(SPAMC, "$SPAMC", [Spamc command])
+
+# Check nroff and the options it supports
+AC_CHECK_PROGS(NROFF, nroff)
+
+MDOC=no
+if test "x$NROFF" != x; then
+    AC_MSG_CHECKING([for mdoc nroff macros])
+    AC_CACHE_VAL(ac_cv_mdoc, [
+    nroff -mdoc < /dev/null > /dev/null 2>&1
+    if test $? = 0; then
+        ac_cv_mdoc=yes
+    else
+        ac_cv_mdoc=no
+    fi
+    ])
+    MDOC=$ac_cv_mdoc
+    AC_MSG_RESULT([$MDOC])
+fi
+
+AM_CONDITIONAL(HAVE_MDOC, test $MDOC = yes)
 
 # Search for pthreads, and make them the default (have to do it here else
 # the -lmilter check will fail to link)
