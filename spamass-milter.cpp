@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.66 2003/08/29 16:00:01 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.67 2003/09/03 04:53:16 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -131,7 +131,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.66 2003/08/29 16:00:01 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.67 2003/09/03 04:53:16 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -1446,7 +1446,7 @@ SpamAssassin::local_user()
   if (_rcpt[0]=='<')
     return _rcpt.substr(1,_rcpt.find('@')-1);
   else
-  	return _rcpt;
+  	return _rcpt.substr(0,_rcpt.find('@'));
 }
 
 string
