@@ -1,6 +1,7 @@
 #! /bin/sh
 #
 # /usr/local/etc/rc.d script for FreeBSD
+# $Id: spamass-milter.sh,v 1.2 2002/12/27 21:36:05 dnelson Exp $
 
 if ! PREFIX=$(expr $(realpath $0) : "\(/.*\)/etc/rc\.d/$(basename $0)\$"); then
     echo "$0: Cannot determine the PREFIX - aborting" >&2
