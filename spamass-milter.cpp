@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.19 2002/12/21 18:20:16 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.20 2002/12/23 17:08:30 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -104,7 +104,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.19 2002/12/21 18:20:16 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.20 2002/12/23 17:08:30 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -113,8 +113,8 @@ struct smfiDesc smfilter =
     SMFIF_ADDHDRS|SMFIF_CHGHDRS|SMFIF_CHGBODY,  // flags
     NULL, // info filter callback
     NULL, // HELO filter callback
-    mlfi_envfrom, // envelope filter callback
-    NULL, // envelope recipient filter callback
+    mlfi_envfrom, // envelope sender filter callback
+    mlfi_envrcpt, // envelope recipient filter callback
     mlfi_header, // header filter callback
     mlfi_eoh, // end of header callback
     mlfi_body, // body filter callback
@@ -125,8 +125,10 @@ struct smfiDesc smfilter =
 
 int flag_debug = 0;
 bool flag_reject = false;
+bool flag_sniffuser = false;
 int reject_score = -1;
 bool dontmodify = false;
+char *defaultuser;
 
 // {{{ main()
 
@@ -134,7 +136,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "p:fd:mr:";
+   const char *args = "p:fd:mr:u:";
    char *sock = NULL;
    bool dofork = false;
 
@@ -157,6 +159,10 @@ main(int argc, char* argv[])
 				flag_reject = true;
 				reject_score = atoi(optarg);
 				break;
+			case 'u':
+				flag_sniffuser = true;
+				defaultuser = strdup(optarg);
+				break;
 			case '?':
 				err = 1;
 				break;
@@ -166,13 +172,15 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-f] [-d nn] [-m] [-r nn]" << endl;
+      cout << "Usage: spamass-milter -p socket [-d nn] [-f] [-m] [-r nn] [-u user]" << endl;
       cout << "   -p socket: path to create socket" << endl;
+      cout << "   -d nn: set debug level to nn (1-3).  Logs to syslog" << endl;
       cout << "   -f: fork into background" << endl;
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
-      cout << "   -d nn: set debug level to nn (1-3).  Logs to syslog" << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n" 
               "          use -1 to reject any messages tagged by SA." << endl;
+      cout << "   -u user: pass the recipient's username to spamc.  Use 'user'\n"
+              "          if there are multiple recipients." << endl;
       exit(EX_USAGE);
    }
 
@@ -397,6 +405,28 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 };
 
 //
+// Gets called once for each recipient
+//
+// stores the first recipient in the spamassassin object and
+// discards the rest, keeping track of the number of recipients.
+//
+sfsistat
+mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
+{
+	SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+
+	if (assassin->numrcpt() == 0)
+	{
+		assassin->set_numrcpt(1);
+		assassin->set_rcpt(string(envrcpt[0]));
+	} else
+	{
+		assassin->set_numrcpt();
+	}
+	return SMFIS_CONTINUE;
+}
+
+//
 // Gets called repeatedly for all header fields
 //
 // assembles the headers and passes them on to the SpamAssassin client
@@ -405,11 +435,29 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 // only exception: SpamAssassin header fields (X-Spam-*) get suppressed
 // but are being stored in the SpamAssassin element.
 //
+// this function also starts the connection with the SPAMC program the
+// first time it is called.
+//
+
 sfsistat
 mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
 {
   SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
   debug(1, "mlfi_header: enter");
+
+  // Check if the SPAMC program has already been run, if not we run it.
+  if ( !(assassin->connected) )
+     {
+       try {
+         assassin->connected = 1; // SPAMC is getting ready to run
+         assassin->Connect();
+       } 
+       catch (string& problem) {
+         throw_error(problem);
+         return SMFIS_TEMPFAIL;
+       };
+     }
+ 
 
   // Is it a "X-Spam-" header field?
   if ( cmp_nocase_partial(string("X-Spam-"), string(headerf)) == 0 )
@@ -605,9 +653,49 @@ mlfi_abort(SMFICTX* ctx)
 
 // {{{ SpamAssassin Class
 
+//
+// This is a new constructor for the SpamAssassin object.  It simply 
+// initializes two variables.  The original constructor has been
+// renamed to Connect().
+//
 SpamAssassin::SpamAssassin():
-  error(false)
+  error(false),
+  connected(false),
+  _numrcpt(0)
+{
+}
+
+
+SpamAssassin::~SpamAssassin()
 { 
+	if (connected) 
+	{
+		// close all pipes that are still open
+		if (pipe_io[0][0] > -1)	close(pipe_io[0][0]);
+		if (pipe_io[0][1] > -1)	close(pipe_io[0][1]);
+		if (pipe_io[1][0] > -1)	close(pipe_io[1][0]);
+		if (pipe_io[1][1] > -1)	close(pipe_io[1][1]);
+
+		// child still running?
+		if (running)
+		{
+			// slaughter child
+			kill(pid, SIGKILL);
+
+			// wait for child to terminate
+			int status;
+			waitpid(pid, &status, 0);
+		}
+	}
+};
+
+//
+// This is the old SpamAssassin constructor.  It has been renamed Connect(),
+// and is now called at the beginning of the mlfi_header() function.
+//
+
+void SpamAssassin::Connect()
+{
   // set up pipes for in- and output
   if (pipe(pipe_io[0]))
     throw string(string("pipe error: ")+string(strerror(errno)));
@@ -640,16 +728,32 @@ SpamAssassin::SpamAssassin():
       // execute spamc 
       // absolute path (determined in autoconf) 
       // should be a little more secure
+      // XXX arbitrary 100-argument max
+      int argc = 0;
+      char** argv = (char**) malloc(100*sizeof(char*));
 #if 0
-      char** argv = (char**) malloc(4*sizeof(char*));
-      argv[0] = SPAMC;
-      argv[1] = "-u";
-      argv[2] = "milter";
-      argv[3] = 0;
+      argv[argc++] = SPAMC;
+      argv[argc++] = "-u";
+      argv[argc++] = "milter";
+      argv[argc++] = 0;
 #else
-      char** argv = (char**) malloc(2*sizeof(char*));
-      argv[0] = SPAMC;
-      argv[1] = 0;
+      argv[argc++] = SPAMC;
+      if (flag_sniffuser) 
+      {
+        argv[argc++] = "-u";
+        if ( numrcpt() != 1 )
+        {
+          // More (or less?) than one recipient, so we pass the special
+          // username _multi_ to SPAMC.  This way special rules can be
+          // defined for multi recipient messages.
+          argv[argc++] = "_multi_"; 
+        } else
+        { 
+          // There is only 1 recipient so we pass the username to SPAMC 
+          argv[argc++] = (char *) local_user().c_str(); 
+        }
+      }
+      argv[argc++] = 0;
 #endif
 
       execvp(argv[0] , argv); // does not return!
@@ -658,7 +762,7 @@ SpamAssassin::SpamAssassin():
       throw_error(string("execution error: ")+string(strerror(errno)));
       
       break;
-    };
+    }
 
   // +++ PARENT +++
 
@@ -678,35 +782,6 @@ SpamAssassin::SpamAssassin():
 
   // we have to assume the client is running now.
   running=true;
-
-};
-
-SpamAssassin::~SpamAssassin()
-{ 
-
-  // close all pipes that are still open
-  if (pipe_io[0][0] > -1)
-    close(pipe_io[0][0]);
-
-  if (pipe_io[0][1] > -1)
-    close(pipe_io[0][1]);
-
-  if (pipe_io[1][0] > -1)
-    close(pipe_io[1][0]);
-
-  if (pipe_io[1][1] > -1)
-    close(pipe_io[1][1]);
-
-  // child still running?
-  if (running)
-    {
-      // slaughter child
-      kill(pid, SIGKILL);
-
-      // wait for child to terminate
-      int status;
-      waitpid(pid, &status, 0);
-    };
 
 };
 
@@ -878,6 +953,40 @@ SpamAssassin::subject()
   return _subject;
 };
 
+string&
+SpamAssassin::rcpt()
+{
+  return _rcpt;
+}
+
+string
+SpamAssassin::local_user()
+{
+  // assuming we have a recipient in the form: <username@somehost.somedomain>
+  // we return 'username'
+  return _rcpt.substr(1,_rcpt.find('@')-1);
+}
+
+int
+SpamAssassin::numrcpt()
+{
+  return _numrcpt;
+}
+
+int
+SpamAssassin::set_numrcpt()
+{
+  _numrcpt++;
+  return _numrcpt;
+}
+
+int
+SpamAssassin::set_numrcpt(const int val)
+{
+  _numrcpt = val;
+  return _numrcpt;
+}
+
 //
 // set the values of the different SpamAssassin
 // fields in our element. Returns former size of field
@@ -945,6 +1054,14 @@ SpamAssassin::set_subject(const string& val)
   _subject = val;
   return (old);
 };
+
+string::size_type
+SpamAssassin::set_rcpt(const string& val)
+{
+  string::size_type old = _rcpt.size();
+  _rcpt = val;
+  return (old);  
+}
 
 //
 // Read available output from SpamAssassin client

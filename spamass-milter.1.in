@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.5 2002/12/21 18:18:30 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.6 2002/12/23 17:08:30 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -8,10 +8,11 @@
 .Sh SYNOPSIS
 .Nm
 .Fl p Pa socket
+.Op Fl d Ar nn
 .Op Fl f
 .Op Fl m
-.Op Fl d Ar nn
 .Op Fl r Ar nn
+.Op Fl u Ar user
 .Sh DESCRIPTION
 The
 .Nm
@@ -29,16 +30,6 @@ will not be able to access the milter.  This may cause
 messages to bounce, queue, or be passed through unmiltered, depending
 on the parameters in
 .Nm sendmail Ns 's .cf file.
-.It Fl f
-Causes
-.Nm
-to fork into the background.
-.It Fl m
-Disables modification of the Subject: and Content-Type: headers and
-message body. This is useful when SpamAssassin is configured with
-defang_mime 0 and report_header 1, or when SA is simply used to add
-headers for postprocessing later.  Updating the body through the milter
-interface can be slow for large messages.
 .It Fl d Ar nn
 Sets the debug level:
 .Bl -tag -width "indent"
@@ -50,19 +41,47 @@ Also log I/O operations with
 .It 3
 Also log the results of string comparisons.
 .El
+.It Fl f
+Causes
+.Nm
+to fork into the background.
+.It Fl m
+Disables modification of the Subject: and Content-Type: headers and
+message body. This is useful when SpamAssassin is configured with
+defang_mime 0 and report_header 1, or when SA is simply used to add
+headers for postprocessing later.  Updating the body through the milter
+interface can be slow for large messages.
 .It Fl r Ar nn
 Reject scanned email if it greater than or equal to
 .Ar nn .
 If 
 .Ar -1 ,
-reject scanned email if SpamAssassin tags it as spam (useful if users
-have changed their required_hits value)
+reject scanned email if SpamAssassin tags it as spam (useful if you
+are also using the
+.Fl u
+flag, and users have changed their required_hits value).
 .Pp
 For example: if you usually use procmail to redirect tagged email into
 a separate folder just in case of false positives, you can use
 .Fl r Ar 15
 and reject flagrant spam outright while still receiving low-scoring
 messages.
+.It Fl u Ar user
+Pass the username part of the first recipient to spamc with the 
+.Fl u 
+flag.  This allows user preferences files to be used. If the message is
+addressed to multiple recipients, the username
+.Ar user
+is passed instead.
+.Pp
+Note that 
+.Nm
+does not know whether an email is incoming or outgoing, so a message
+from user1@localdomain.com to user2@yahoo.com will make 
+.Nm
+pass 
+.Fl u Ar user2
+to spamc.
 .El
 .Sh FILES
 .Bl -tag -width "indent"
