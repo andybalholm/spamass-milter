@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.12 2003/06/06 16:37:24 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.13 2003/06/07 19:16:39 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -57,13 +57,6 @@ struct networklist
 	int num_nets;
 };
 
-/* holds information about an SMTP connection (which may span multiple
-   messages, so the info can't be stored in a SpamAssassin object)
-*/
-struct connect_info 
-{
-	in_addr ip;
-};
 
 // Debug tokens.
 enum debuglevel 
@@ -141,9 +134,13 @@ public:
   // Process handling variables
   pid_t pid;
   int pipe_io[2][2];
+};
   
-  // pointer to some per-connection info (shared across multiple messages)
-  struct connect_info *ci;  
+/* Private data structure to carry per-client data between calls */
+struct context
+{
+	struct in_addr connect_ip;	// remote IP address
+	SpamAssassin *assassin; // pointer to the SA object if we're processing a message
 };
 
 /* This hack is the only way to call pointers to member functions! */

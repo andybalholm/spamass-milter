@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.39 2003/06/06 20:48:27 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.40 2003/06/07 19:16:39 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.39 2003/06/06 20:48:27 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.40 2003/06/07 19:16:39 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -483,16 +483,17 @@ retrieve_field(const string& header, const string& field)
 sfsistat 
 mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 {
-	struct connect_info *ci;
+	struct context *sctx;
 
 	debug(D_FUNC, "mlfi_connect: enter");
 
-	/* allocate a structure to store the IP address in */
-	ci = (struct connect_info *)malloc(sizeof(*ci));
-	ci->ip = ((struct sockaddr_in *) hostaddr)->sin_addr;
+	/* allocate a structure to store the IP address (and SA object) in */
+	sctx = (struct context *)malloc(sizeof(*sctx));
+	sctx->connect_ip = ((struct sockaddr_in *) hostaddr)->sin_addr;
+	sctx->assassin = NULL;
 	
 	/* store a pointer to it with setpriv */
-	smfi_setpriv(ctx, ci);
+	smfi_setpriv(ctx, sctx);
 
 	if (ip_in_networklist(((struct sockaddr_in *) hostaddr)->sin_addr, &ignorenets))
 	{
@@ -519,6 +520,7 @@ sfsistat
 mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 {
   SpamAssassin* assassin;
+  struct context *sctx = (struct context *)smfi_getpriv(ctx);
 
   debug(D_FUNC, "mlfi_envfrom: enter");
   try {
@@ -530,14 +532,10 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
       return SMFIS_TEMPFAIL;
     };
   
-  /* grab and record the pointer to our connection-specific data before it
-     gets overwritten */
+  assassin->set_connectip(string(inet_ntoa(sctx->connect_ip)));
 
-  assassin->ci = (struct connect_info*)smfi_getpriv(ctx);
-  assassin->set_connectip(string(inet_ntoa(assassin->ci->ip)));
-  
-  // register the pointer to SpamAssassin object as private data
-  smfi_setpriv(ctx, static_cast<void*>(assassin));
+  // Store a pointer to the assassin object in our context struct
+  sctx->assassin = assassin;
 
   // remember the MAIL FROM address
   assassin->set_from(string(envfrom[0]));
@@ -557,7 +555,7 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 sfsistat
 mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 {
-	SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+	SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
 
 	if (assassin->numrcpt() == 0)
 	{
@@ -617,7 +615,7 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 sfsistat
 mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
 {
-  SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+  SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
   debug(D_FUNC, "mlfi_header: enter");
 
 
@@ -670,7 +668,7 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
   } catch (string& problem)
     {
       throw_error(problem);
-      smfi_setpriv(ctx, assassin->ci);
+      ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
       delete assassin;
       debug(D_FUNC, "mlfi_header: exit error");
       return SMFIS_TEMPFAIL;
@@ -691,7 +689,7 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
 sfsistat
 mlfi_eoh(SMFICTX* ctx)
 {
-  SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+  SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
 
   debug(D_FUNC, "mlfi_eoh: enter");
 
@@ -714,7 +712,7 @@ mlfi_eoh(SMFICTX* ctx)
   } catch (string& problem)
     {
       throw_error(problem);
-      smfi_setpriv(ctx, assassin->ci);
+      ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
       delete assassin;
   
       debug(D_FUNC, "mlfi_eoh: exit error");
@@ -736,14 +734,14 @@ sfsistat
 mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
 {
   debug(D_FUNC, "mlfi_body: enter");
-  SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+  SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
  
   try {
     assassin->output(bodyp, bodylen);
   } catch (string& problem)
     {
       throw_error(problem);
-      smfi_setpriv(ctx, assassin->ci);
+      ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
       delete assassin;
       debug(D_FUNC, "mlfi_body: exit error");
       return SMFIS_TEMPFAIL;
@@ -764,7 +762,7 @@ mlfi_body(SMFICTX* ctx, u_char *bodyp, size_t bodylen)
 sfsistat
 mlfi_eom(SMFICTX* ctx)
 {
-  SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+  SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
   int milter_status;
  
   debug(D_FUNC, "mlfi_eom: enter");
@@ -779,13 +777,13 @@ mlfi_eom(SMFICTX* ctx)
     milter_status = assassinate(ctx, assassin);
 
     // now cleanup the element.
-    smfi_setpriv(ctx, assassin->ci);
+    ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
     delete assassin;
 
   } catch (string& problem)
     {
       throw_error(problem);
-      smfi_setpriv(ctx, assassin->ci);
+      ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
       delete assassin;
       debug(D_FUNC, "mlfi_eom: exit error");
       return SMFIS_TEMPFAIL;
@@ -802,17 +800,17 @@ mlfi_eom(SMFICTX* ctx)
 sfsistat
 mlfi_close(SMFICTX* ctx)
 {
-  struct connect_info *ci;
+  struct context *sctx;
   debug(D_FUNC, "mlfi_close");
   
-  ci = (struct connect_info*)smfi_getpriv(ctx);
-  if (ci == NULL)
+  sctx = (struct context*)smfi_getpriv(ctx);
+  if (sctx == NULL)
   {
     /* the context should have been set in mlfi_connect */
   	debug(D_ALWAYS, "NULL context in mlfi_close! Should not happen!");
     return SMFIS_ACCEPT;
   }
-  free(ci);
+  free(sctx);
   smfi_setpriv(ctx, NULL);
   
   return SMFIS_ACCEPT;
@@ -827,10 +825,10 @@ mlfi_close(SMFICTX* ctx)
 sfsistat
 mlfi_abort(SMFICTX* ctx)
 {
-  SpamAssassin* assassin = static_cast<SpamAssassin*>(smfi_getpriv(ctx));
+  SpamAssassin* assassin = ((struct context *)smfi_getpriv(ctx))->assassin;
 
   debug(D_FUNC, "mlfi_abort");
-  smfi_setpriv(ctx, assassin->ci);
+  ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
   delete assassin;
 
   return SMFIS_ACCEPT;
