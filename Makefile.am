@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.14 2003/06/12 22:41:34 dnelson Exp $
+## $Id: Makefile.am,v 1.15 2003/06/13 02:39:23 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
@@ -8,7 +8,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in \
 	config.log config.status configure configure.lineno stamp-h.in \
 	COPYING INSTALL config.guess config.sub install-sh missing mkinstalldirs
 maintainer-clean-local:
-	rm -rf autom4te* $(distdir) $(distdir).tar.gz
+	rm -rf autom4te* $(distdir) $(distdir).tar.gz $(distdir).tar.bz2
 distclean-local:
 	rm -f configure.lineno
 
@@ -19,8 +19,10 @@ dist-hook:
 		cvs2cl --no-wrap -S -U contrib/users --stdout > $(distdir)/ChangeLog ; \
 	fi
 
-upload: dist dist-bzip2
-	rsync $(distdir).tar.bz2 $(distdir).tar.gz subversions.gnu.org:/upload/spamass-milt/
+.PHONY: upload changelog dist-hook
+
+upload: dist-all
+	rsync -a --progress $(distdir).tar.bz2 $(distdir).tar.gz subversions.gnu.org:/upload/spamass-milt/
 
 changelog:
 	cvs2cl --no-wrap -S -U contrib/users 
