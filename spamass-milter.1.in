@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.15 2003/07/31 19:13:02 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.16 2003/08/11 21:36:32 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -62,6 +62,8 @@ Other non-verbose logging.
 Lookups of the ignored netblocks list.
 .It poll
 Low-level I/O to the child spamc process.
+.It rcpt
+Recipient processing.
 .It spamc
 High-level I/O to the child spamc process.
 .It str

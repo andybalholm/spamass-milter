@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.61 2003/08/06 04:45:46 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.62 2003/08/11 21:36:32 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -81,6 +81,9 @@
 #include <fcntl.h>
 #include <syslog.h>
 #include <signal.h>
+#ifdef HAVE_PATHS_H
+#include <paths.h>
+#endif
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #else
@@ -131,7 +134,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.61 2003/08/06 04:45:46 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.62 2003/08/11 21:36:32 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -151,7 +154,7 @@ struct smfiDesc smfilter =
   };
 
 const char *const debugstrings[] = {
-	"ALL", "FUNC", "POLL", "UORI", "STR", "MISC", "NET", "SPAMC",
+	"ALL", "FUNC", "POLL", "UORI", "STR", "MISC", "NET", "SPAMC", "RCPT",
 	NULL
 };
 
@@ -417,7 +420,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
                   // It's not 100% important that this succeeds, so we'll just warn on failure rather than bailing out.
                   if ( smfi_delrcpt( ctx, (char *)assassin->recipients.front().c_str()) != MI_SUCCESS ) {
                         // throw_error really just logs a warning as opposed to actually throw()ing
-                        throw_error( "Failed to remove recipient from the envelope" );
+                        debug(D_ALWAYS, "Failed to remove recipient %s from the envelope", assassin->recipients.front().c_str() );
                   }
                   assassin->recipients.pop_front();
                 }
@@ -679,9 +682,36 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 {
 	struct context *sctx = (struct context*)smfi_getpriv(ctx);
 	SpamAssassin* assassin = sctx->assassin;
-	char **rcpt;
+	FILE *p;
+	char buf[1024];
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
+
+	/* open a pipe to sendmail so we can do address expansion */
+	sprintf(buf,"%s -bv \"%s\"",_PATH_SENDMAIL, envrcpt[0]);
+	debug(D_RCPT, "calling %s", buf);
+	p = popen(buf,"r");
+	if (!p)
+	{
+		debug(D_RCPT, "popen failed. Will not expand aliases: ", strerror(errno));
+	} else
+	while (fgets(buf,sizeof(buf),p) != NULL)
+	{
+		list <string> newrecipients;
+		int i=strlen(buf);
+        while (i > 0 && buf[i - 1] <= ' ')
+			i--;
+		buf[i] = '\0';
+		debug(D_RCPT, "sendmail output: %s", buf);
+		if (strstr(buf, "... deliverable: mailer "))
+		{
+			char *p=strstr(buf,", user ");
+			debug(D_RCPT, "user: %s", p+7);
+			newrecipients.push_back(p+7);
+		}
+		debug(D_RCPT, "Expanded to %d recipients", (int)newrecipients.size());
+	}
+	pclose(p);
 
 	if (assassin->numrcpt() == 0)
 	{
@@ -731,10 +761,9 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	{
 		assassin->set_numrcpt();
 	}
-	for( rcpt = envrcpt; *rcpt; rcpt++ ) 
-	{
-		assassin->recipients.push_back( *rcpt ); // XXX verify that this worked
-	}
+
+	debug(D_RCPT, "remembering recipient %s", envrcpt[0]);
+	assassin->recipients.push_back( envrcpt[0] ); // XXX verify that this worked
 
 	debug(D_FUNC, "mlfi_envrcpt: exit");
 

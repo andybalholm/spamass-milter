@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.17 2003/06/14 19:17:41 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.18 2003/08/11 21:36:32 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -63,7 +63,7 @@ struct networklist
 // Debug tokens.
 enum debuglevel 
 {
-	D_ALWAYS, D_FUNC, D_POLL, D_UORI, D_STR, D_MISC, D_NET, D_SPAMC,
+	D_ALWAYS, D_FUNC, D_POLL, D_UORI, D_STR, D_MISC, D_NET, D_SPAMC, D_RCPT,
 	D_MAX // must be last
 };
 

@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.30 2003/06/30 20:24:04 dnelson Exp $
+# $Id: configure.in,v 1.31 2003/08/11 21:36:32 dnelson Exp $
 AC_INIT(spamass-milter, 0.2.0+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.30 $)
+AC_REVISION($Revision: 1.31 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -58,7 +58,7 @@ LIBS="$LIBS $PTHREAD_LIBS"
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([fcntl.h syslog.h sys/select.h])
+AC_CHECK_HEADERS([fcntl.h paths.h syslog.h sys/select.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
