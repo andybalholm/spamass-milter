@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.47 2003/06/14 19:01:56 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.48 2003/06/18 23:13:03 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -110,15 +110,23 @@ extern "C" {
 #include "libmilter/mfapi.h"
 //#include "libmilter/mfdef.h"
 
+#if !HAVE_DECL_STRSEP
+char *strsep(char **stringp, const char *delim);
+#endif 
+
 #ifdef  __cplusplus
 }
 #endif
 
 #include "spamass-milter.h"
 
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
+
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.47 2003/06/14 19:01:56 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.48 2003/06/18 23:13:03 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {

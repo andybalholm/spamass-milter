@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.25 2003/06/18 18:57:57 dnelson Exp $
+# $Id: configure.in,v 1.26 2003/06/18 23:13:03 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.3a+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.25 $)
+AC_REVISION($Revision: 1.26 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -15,9 +15,10 @@ AC_PROG_CC
 VL_PROG_CC_WARNINGS
 CFLAGS="$CFLAGS $VL_WARN_CFLAGS"
 CXXFLAGS="$CXXFLAGS $VL_WARN_CFLAGS"
+AC_LANG(C++)
+
 PIKE_INCLUDE_PATHS
 PIKE_LIBRARY_PATHS
-AM_WITH_DMALLOC
 
 # Search for spamc
 dnl AC_ARG_VAR(SPAMC,[Spamc command])
@@ -79,12 +80,17 @@ AC_MSG_NOTICE([Emulating poll with select])
 AC_LIBOBJ(poll)
 fi
 
+DN_WITH_DMALLOC
+
 # Checks for library functions.
 AC_CHECK_FUNCS([vsyslog vasprintf vsnprintf])
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 AC_SEARCH_LIBS(inet_aton, resolv)
+
+# check for strsep and verify that the system provides a prototype for it.
 AC_REPLACE_FUNCS(strsep)
+AC_CHECK_DECLS(strsep)
 
 # Check for libmilter and its header files in the usual locations
 if test -d /usr/lib/libmilter ; then
