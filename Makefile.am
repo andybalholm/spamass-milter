@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.13 2003/06/10 05:52:49 dnelson Exp $
+## $Id: Makefile.am,v 1.14 2003/06/12 22:41:34 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
@@ -18,6 +18,9 @@ dist-hook:
 	if test ! -s $(distdir)/ChangeLog ; then \
 		cvs2cl --no-wrap -S -U contrib/users --stdout > $(distdir)/ChangeLog ; \
 	fi
+
+upload: dist dist-bzip2
+	rsync $(distdir).tar.bz2 $(distdir).tar.gz subversions.gnu.org:/upload/spamass-milt/
 
 changelog:
 	cvs2cl --no-wrap -S -U contrib/users 

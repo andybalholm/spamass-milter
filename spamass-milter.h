@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.15 2003/06/11 20:17:26 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.16 2003/06/12 22:41:34 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -166,3 +166,4 @@ void closeall(int fd);
 void parse_networklist(char *string, struct networklist *list);
 int ip_in_networklist(struct in_addr ip, struct networklist *list);
 void parse_debuglevel(char* string);
+char *strlwr(char *str);

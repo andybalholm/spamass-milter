@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.45 2003/06/11 20:17:26 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.46 2003/06/12 22:41:34 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -118,7 +118,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.45 2003/06/11 20:17:26 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.46 2003/06/12 22:41:34 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -1049,8 +1049,12 @@ void SpamAssassin::Connect()
           argv[argc++] = defaultuser; 
         } else
         { 
-          // There is only 1 recipient so we pass the username to SPAMC 
-          argv[argc++] = (char *) local_user().c_str(); 
+          // There is only 1 recipient so we pass the username
+          // (converted to lowercase) to SPAMC.  Don't worry about 
+          // freeing this memory as we're exec()ing anyhow.
+          argv[argc] = strlwr(strdup(local_user().c_str())); 
+          
+          argc++;
         }
       }
       if (spamdhost) 
@@ -1720,6 +1724,16 @@ int ip_in_networklist(struct in_addr ip, struct networklist *list)
 	return 0;
 }
 
+char *strlwr(char *str)
+{
+    char *s = str;
+    while (*s)
+    {
+        *s = tolower(*s);
+        s++;
+    }
+    return str;
+}
 
 // }}}
 // vim6:ai:noexpandtab
