@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.54 2003/07/07 19:44:08 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.55 2003/07/07 19:46:51 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -130,7 +130,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.54 2003/07/07 19:44:08 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.55 2003/07/07 19:46:51 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -1151,6 +1151,7 @@ SpamAssassin::output(const void* buffer, long size)
 		(string::size_type, char), so we have to cast the parameters.
 	*/
   	outputbuffer.append((const char *)buffer,(string::size_type)size);
+  	debug(D_FUNC, "::output exit1");
   	return;
   }
 
@@ -1215,7 +1216,7 @@ SpamAssassin::output(const void* buffer, long size)
 	}
   } while ( total < size );
 
-  debug(D_FUNC, "::output exit");
+  debug(D_FUNC, "::output exit2");
 }
 
 void SpamAssassin::output(const void* buffer)
@@ -1240,11 +1241,14 @@ SpamAssassin::close_output()
 void
 SpamAssassin::input()
 {
-	debug(D_FUNC, "::input enter");
+  debug(D_FUNC, "::input enter");
   // if the child has exited or we experienced an error, return
   // immediately.
   if (!running || error)
+  {
+    debug(D_FUNC, "::input exit1");
     return;
+  }
 
   // keep reading from input pipe until it is empty
   empty_and_close_pipe();
@@ -1259,7 +1263,7 @@ SpamAssassin::input()
       error = true;
       throw string(string("waitpid error: ")+string(strerror(errno)));
     }; 
-	debug(D_FUNC, "::input exit");
+	debug(D_FUNC, "::input exit2");
 }
 
 //
