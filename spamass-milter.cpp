@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.18 2002/11/17 22:57:23 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.19 2002/12/21 18:20:16 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -104,7 +104,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.18 2002/11/17 22:57:23 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.19 2002/12/21 18:20:16 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -220,6 +220,7 @@ void update_or_insert(SpamAssassin* assassin, SMFICTX* ctx, string oldstring, t_
 	string newstring;
 	string::size_type oldsize;
 
+	debug(3, "u_or_i: looking at <%s>", header);
 	debug(3, "u_or_i: oldstring: <%s>", oldstring.c_str());
 
 	newstring = retrieve_field(assassin->d().substr(0, eoh), string(header));
@@ -342,8 +343,13 @@ retrieve_field(const string& header, const string& field)
   // look for end of field name
   pos = find_nocase(header, string(" "), pos) + 1;
   
-  // look for end of content
   string::size_type pos2(pos);
+
+  // is field empty? 
+  if (pos2 == find_nocase(header, string("\n"), pos2))
+    return string("");
+
+  // look for end of content
   do {
 
     pos2 = find_nocase(header, string("\n"), pos2+1);
