@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.8 2002/11/15 07:18:26 dnelson Exp $
+## $Id: Makefile.am,v 1.9 2002/12/27 21:38:49 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign
 
@@ -28,9 +28,11 @@ DEB_CONTRIB =	contrib/spamass-milter
 RH_CONTRIB =	contrib/spamass-milter-redhat.rc \
 		contrib/spamass-milter.spec \
 		contrib/spamass-milter.spec.in
+FBSD_CONTRIB =	contrib/spamass-milter.sh
 MISC_CONTRIB =	contrib/README.gnus
 spamass_milter_SOURCES = spamass-milter.cpp spamass-milter.h 
 EXTRA_DIST =	$(DEB_CONTRIB) \
 		$(RH_CONTRIB) \
+		$(FBSD_CONTRIB) \
 		$(MISC_CONTRIB) \
 		spamass-milter.1.in
