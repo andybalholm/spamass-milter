@@ -1,7 +1,8 @@
-$Id: NEWS,v 1.16 2003/07/31 19:13:02 dnelson Exp $
+$Id: NEWS,v 1.17 2003/08/05 04:13:33 dnelson Exp $
 
 unreleased:
  * -M option which disables all message modifications
+ * Fixed crash on spam with no body at all
 
 0.2.0: (2003-06-26)
  * -b/-B options to redirect tagged messages to another email address.
