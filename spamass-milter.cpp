@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.58 2003/07/31 19:13:02 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.59 2003/07/31 22:35:32 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -131,7 +131,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.58 2003/07/31 19:13:02 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.59 2003/07/31 22:35:32 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -325,23 +325,26 @@ void update_or_insert(SpamAssassin* assassin, SMFICTX* ctx, string oldstring, t_
 
 	oldsize = callsetter(*assassin,setter)(newstring);
       
-	if (newstring != oldstring)
+	if (!dontmodify)
 	{
-		/* change if old one was present, append if non-null */
-		if (oldsize > 0)
+		if (newstring != oldstring)
 		{
-			debug(D_UORI, "u_or_i: changing");
-			smfi_chgheader(ctx, header, 1, newstring.size() > 0 ? 
-				const_cast<char*>(newstring.c_str()) : NULL );
-		} else if (newstring.size() > 0)
+			/* change if old one was present, append if non-null */
+			if (oldsize > 0)
+			{
+				debug(D_UORI, "u_or_i: changing");
+				smfi_chgheader(ctx, header, 1, newstring.size() > 0 ? 
+					const_cast<char*>(newstring.c_str()) : NULL );
+			} else if (newstring.size() > 0)
+			{
+				debug(D_UORI, "u_or_i: inserting");
+				smfi_addheader(ctx, header, 
+					const_cast<char*>(newstring.c_str()));
+			}
+		} else
 		{
-			debug(D_UORI, "u_or_i: inserting");
-			smfi_addheader(ctx, header, 
-				const_cast<char*>(newstring.c_str()));
+			debug(D_UORI, "u_or_i: no change");
 		}
-	} else
-	{
-		debug(D_UORI, "u_or_i: no change");
 	}
 }
 
@@ -363,11 +366,8 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   if (bob == string::npos)
   	bob = assassin->d().size();
 
-  if (!dontmodify)
-  {
-    update_or_insert(assassin, ctx, assassin->spam_flag(), &SpamAssassin::set_spam_flag, "X-Spam-Flag");
-    update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
-  }
+  update_or_insert(assassin, ctx, assassin->spam_flag(), &SpamAssassin::set_spam_flag, "X-Spam-Flag");
+  update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
 
   /* Summarily reject the message if SA tagged it, or if we have a minimum
      score, reject if it exceeds that score. */
@@ -425,13 +425,10 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
         }
   }
 
-  if (!dontmodify)
-  {
-    update_or_insert(assassin, ctx, assassin->spam_report(), &SpamAssassin::set_spam_report, "X-Spam-Report");
-    update_or_insert(assassin, ctx, assassin->spam_prev_content_type(), &SpamAssassin::set_spam_prev_content_type, "X-Spam-Prev-Content-Type");
-    update_or_insert(assassin, ctx, assassin->spam_level(), &SpamAssassin::set_spam_level, "X-Spam-Level");
-    update_or_insert(assassin, ctx, assassin->spam_checker_version(), &SpamAssassin::set_spam_checker_version, "X-Spam-Checker-Version");
-  }
+  update_or_insert(assassin, ctx, assassin->spam_report(), &SpamAssassin::set_spam_report, "X-Spam-Report");
+  update_or_insert(assassin, ctx, assassin->spam_prev_content_type(), &SpamAssassin::set_spam_prev_content_type, "X-Spam-Prev-Content-Type");
+  update_or_insert(assassin, ctx, assassin->spam_level(), &SpamAssassin::set_spam_level, "X-Spam-Level");
+  update_or_insert(assassin, ctx, assassin->spam_checker_version(), &SpamAssassin::set_spam_checker_version, "X-Spam-Checker-Version");
 
   // 
   // If SpamAssassin thinks it is spam, replace
