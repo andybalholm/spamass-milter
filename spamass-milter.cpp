@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.68 2003/09/12 05:42:07 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.69 2003/09/12 05:45:05 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -132,7 +132,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.68 2003/09/12 05:42:07 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.69 2003/09/12 05:45:05 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -311,7 +311,7 @@ main(int argc, char* argv[])
 	} else {
       debug(D_MISC, "smfi_register succeeded");
    }
-	debug(D_ALWAYS, "spamass-milter %s ($Revision: 1.68 $) starting", PACKAGE_VERSION);
+	debug(D_ALWAYS, "spamass-milter %s starting", PACKAGE_VERSION);
 	err = smfi_main();
 	debug(D_ALWAYS, "spamass-milter %s exiting", PACKAGE_VERSION);
 	return err;
