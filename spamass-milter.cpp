@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.62 2003/08/11 21:36:32 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.63 2003/08/11 22:12:19 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -134,7 +134,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.62 2003/08/11 21:36:32 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.63 2003/08/11 22:12:19 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -684,6 +684,7 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	SpamAssassin* assassin = sctx->assassin;
 	FILE *p;
 	char buf[1024];
+	list <string> newrecipients;
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
 
@@ -697,7 +698,6 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	} else
 	while (fgets(buf,sizeof(buf),p) != NULL)
 	{
-		list <string> newrecipients;
 		int i=strlen(buf);
         while (i > 0 && buf[i - 1] <= ' ')
 			i--;
@@ -709,8 +709,8 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 			debug(D_RCPT, "user: %s", p+7);
 			newrecipients.push_back(p+7);
 		}
-		debug(D_RCPT, "Expanded to %d recipients", (int)newrecipients.size());
 	}
+	debug(D_RCPT, "Expanded to %d recipients", (int)newrecipients.size());
 	pclose(p);
 
 	if (assassin->numrcpt() == 0)
