@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -10,7 +11,7 @@
 
 /* This function pulled from Markus Gutschke's "wy60" package */
 
-/* $Id: poll.c,v 1.3 2003/03/11 03:40:27 dnelson Exp $ */
+/* $Id: poll.c,v 1.4 2003/06/09 15:57:35 dnelson Exp $ */
 
 int poll(struct pollfd *fds, unsigned long nfds, int timeout) {
   // This emulation function is somewhat limited. Most notably, it will never
