@@ -1,10 +1,13 @@
-$Id: NEWS,v 1.14 2003/06/26 21:57:50 dnelson Exp $
+$Id: NEWS,v 1.15 2003/06/26 22:13:08 dnelson Exp $
+
+unreleased:
+ * nothing yet
 
 0.2.0: (2003-06-26)
  * -b/-B options to redirect tagged messages to another email address.
  * -i option to not run spamassassin on messages coming from specified
    networks.
- * All arguments after -- wil get passed to spamc (deprecate -D at the
+ * All arguments after -- will get passed to spamc (deprecate -D at the
    same time).
  * Envelope, remote IP, HELO, and date get sent to spamc, so the
    results more closely match what spamc via procmail sees.  A lot of
