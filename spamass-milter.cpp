@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.43 2003/06/10 04:47:22 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.44 2003/06/10 04:57:40 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -86,6 +86,15 @@
 #include "subst_poll.h"
 #endif
 #include <errno.h>
+#ifndef HAVE_STRSEP
+#ifdef  __cplusplus
+extern "C" {
+#endif
+char *strsep(char **, const char *);
+#ifdef  __cplusplus
+}
+#endif
+#endif
 
 // C++ includes
 #include <cstdio>
@@ -109,7 +118,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.43 2003/06/10 04:47:22 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.44 2003/06/10 04:57:40 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {

@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.23 2003/06/07 19:43:20 dnelson Exp $
+# $Id: configure.in,v 1.24 2003/06/10 04:57:40 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.3a+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.23 $)
+AC_REVISION($Revision: 1.24 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -81,6 +81,7 @@ AC_CHECK_FUNCS([vsyslog vasprintf vsnprintf])
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 AC_SEARCH_LIBS(inet_aton, resolv)
+AC_REPLACE_FUNCS(strsep)
 
 # Check for libmilter and its header files in the usual locations
 if test -d /usr/lib/libmilter ; then
