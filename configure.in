@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.9 2002/09/18 17:17:43 dnelson Exp $
+# $Id: configure.in,v 1.10 2002/09/20 21:15:06 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.2+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.9 $)
+AC_REVISION($Revision: 1.10 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -14,11 +14,12 @@ AC_PROG_CXX
 AC_PROG_CC
 
 # Search for spamc
-AC_PATH_PROG(SPAMC, spamc)
+AC_ARG_VAR(SPAMC,[Spamc command])
+AC_CHECK_PROG(SPAMC, spamc)
 if test "x$SPAMC" = x ; then
    AC_MSG_ERROR([Spamc not found. Is SpamAssassin installed?])
 fi
-AC_DEFINE_UNQUOTED(SPAMC, "$SPAMC", [location of spamc])
+AC_DEFINE_UNQUOTED(SPAMC, "$SPAMC", [Spamc command])
 
 # Search for pthreads, and make them the default (have to do it here else
 # the -lmilter check will fail to link)
