@@ -1,5 +1,5 @@
 #!/bin/sh -e
-# $Id: autogen.sh,v 1.10 2004/04/20 15:28:41 dnelson Exp $
+# $Id: autogen.sh,v 1.11 2004/05/13 21:50:18 dnelson Exp $
 # Run this to update & generate all the automatic things
 #
 
@@ -12,7 +12,7 @@ for i in 259 -2.59 258 -2.58 257 -2.57 256 -2.56 255 -2.55 2.55 254 -2.54 2.54 2
  fi
 done
 AM=
-for i in 17 -1.7 1.6 -1.6 15 -1.5 ; do
+for i in 18 -1.8 17 -1.7 1.6 -1.6 15 -1.5 ; do
  if type automake$i >/dev/null 2>&1 ; then 
   AM=$i ; echo detected automake$AM ; break
  fi

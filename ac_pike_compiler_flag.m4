@@ -1,8 +1,8 @@
 dnl AC_SYS_COMPILER_FLAG, taken from the Pike 7.5 distribution at http://pike.ida.liu.se
-dnl $Id: ac_pike_compiler_flag.m4,v 1.2 2003/10/24 06:53:51 dnelson Exp $
+dnl $Id: ac_pike_compiler_flag.m4,v 1.3 2004/05/13 21:50:08 dnelson Exp $
 
 # option, cache_name, variable, do_if_failed, do_if_ok
-AC_DEFUN(AC_PIKE_COMPILER_FLAG,
+AC_DEFUN([AC_PIKE_COMPILER_FLAG],
 [
   AC_MSG_CHECKING(for $1)
   AC_CACHE_VAL(pike_cv_option_$2,
