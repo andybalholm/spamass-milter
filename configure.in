@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.10 2002/09/20 21:15:06 dnelson Exp $
+# $Id: configure.in,v 1.11 2002/09/23 05:39:07 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.2+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.10 $)
+AC_REVISION($Revision: 1.11 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -15,7 +15,7 @@ AC_PROG_CC
 
 # Search for spamc
 AC_ARG_VAR(SPAMC,[Spamc command])
-AC_CHECK_PROG(SPAMC, spamc)
+AC_CHECK_PROGS(SPAMC, spamc)
 if test "x$SPAMC" = x ; then
    AC_MSG_ERROR([Spamc not found. Is SpamAssassin installed?])
 fi
