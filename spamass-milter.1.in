@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.4 2002/11/17 22:57:23 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.5 2002/12/21 18:18:30 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -23,9 +23,7 @@ The following options are available:
 .It Fl p Pa socket
 Specifies the pathname of a socket to create for communication with
 .Nm sendmail .
-If it does not exist (or if it does and
-.Nm
-is not running,
+If it is removed,
 .Nm sendmail
 will not be able to access the milter.  This may cause
 messages to bounce, queue, or be passed through unmiltered, depending
@@ -49,13 +47,16 @@ Log entry and exit of internal functions.
 .It 2
 Also log I/O operations with 
 .Nm spamc .
+.It 3
+Also log the results of string comparisons.
 .El
 .It Fl r Ar nn
 Reject scanned email if it greater than or equal to
 .Ar nn .
 If 
 .Ar -1 ,
-reject scanned email if SpamAssassin tags it as spam.  
+reject scanned email if SpamAssassin tags it as spam (useful if users
+have changed their required_hits value)
 .Pp
 For example: if you usually use procmail to redirect tagged email into
 a separate folder just in case of false positives, you can use
