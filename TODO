@@ -1,4 +1,4 @@
-$Id: TODO,v 1.10 2004/03/18 19:04:26 dnelson Exp $
+$Id: TODO,v 1.11 2004/03/27 20:05:28 dnelson Exp $
 
 *DONE* Clean up the Reject/Copy to spambox/Deliver to recipient options:
 
@@ -25,3 +25,5 @@ Option 1 - new flag.  -R "go away"
 Option 2 - overload -r.  -r "20,go away"
 
 Fix ipv6 crashes
+
+Add tcp_wrappers support to limit who can talk to our TCP socket
