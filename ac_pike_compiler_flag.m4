@@ -1,15 +1,14 @@
 dnl AC_SYS_COMPILER_FLAG, taken from the Pike 7.5 distribution at http://pike.ida.liu.se
-dnl $Id: ac_pike_compiler_flag.m4,v 1.1 2003/08/29 16:01:47 dnelson Exp $
+dnl $Id: ac_pike_compiler_flag.m4,v 1.2 2003/10/24 06:53:51 dnelson Exp $
 
-# option, cache_name, variable
+# option, cache_name, variable, do_if_failed, do_if_ok
 AC_DEFUN(AC_PIKE_COMPILER_FLAG,
 [
   AC_MSG_CHECKING(for $1)
   AC_CACHE_VAL(pike_cv_option_$2,
   [
-    OLD_CFLAGS="[$]CFLAGS"
-    CFLAGS="[$]OLD_CFLAGS $1"
-    CXXFLAGS="[$]OLD_CXXFLAGS $1"
+    OLD_CPPFLAGS="[$]CPPFLAGS"
+    CPPFLAGS="[$]OLD_CPPFLAGS $1"
     old_ac_link="[$]ac_link"
     ac_link="[$]old_ac_link 2>conftezt.out.2"
     AC_TRY_RUN([
@@ -26,9 +25,6 @@ AC_DEFUN(AC_PIKE_COMPILER_FLAG,
       pike_cv_option_$2=no, [
       AC_TRY_LINK([], [], pike_cv_option_$2=yes, pike_cv_option_$2=no)
     ])
-    CFLAGS="[$]OLD_CFLAGS"
-    CXXFLAGS="[$]OLD_CXXFLAGS"
-    ac_link="[$]old_ac_link"
     if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
       pike_cv_option_$2=no
     elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
@@ -57,6 +53,8 @@ AC_DEFUN(AC_PIKE_COMPILER_FLAG,
       pike_cv_option_$2=no
     else :; fi
     rm conftezt.out.2
+    CPPFLAGS="[$]OLD_CPPFLAGS"
+    ac_link="[$]old_ac_link"
   ])
   
   if test x"[$]pike_cv_option_$2" = "xyes" ; then
