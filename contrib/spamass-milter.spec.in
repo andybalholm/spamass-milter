@@ -48,7 +48,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS ChangeLog COPYING INSTALL NEWS README
+%doc AUTHORS ChangeLog NEWS README
 %{_sbindir}/spamass-milter
 %{_initrddir}/spamass-milter
 %{_mandir}/man1/spamass-milter.1*
