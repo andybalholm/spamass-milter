@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.86 2005/02/05 07:03:22 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.87 2005/02/22 16:10:04 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.86 2005/02/05 07:03:22 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.87 2005/02/22 16:10:04 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -292,7 +292,7 @@ main(int argc, char* argv[])
               "          username.  Uses 'defaultdomain' if there was none" << endl;
       cout << "   -f: fork into background" << endl;
       cout << "   -i: skip (ignore) checks from these IPs or netblocks" << endl;
-      cout << "          example: -i 192.168.12.5,10.0.0.0/8,172.16/255.255.0.0" << endl;
+      cout << "          example: -i 192.168.12.5,10.0.0.0/8,172.16.0.0/255.255.0.0" << endl;
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -M: don't modify the message at all" << endl;
       cout << "   -P pidfile: Put processid in pidfile" << endl;
