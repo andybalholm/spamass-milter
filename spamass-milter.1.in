@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.1 2002/07/26 04:32:59 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.2 2002/08/18 03:09:30 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -43,24 +43,14 @@ Also log I/O operations with
 .Nm spamc .
 .El
 .El
-.\" The following requests should be uncommented and
-.\" used where appropriate.
-.\" .Sh IMPLEMENTATION NOTES
-.\" This next request is for sections 1, 6, 7 and 8 only.
-.\" .Sh ENVIRONMENT
 .Sh FILES
 .Bl -tag -width "indent"
 .It Pa @SPAMC@
 client interface to SpamAssassin
 .El
-.\" .Sh EXAMPLES
-.\" .Sh DIAGNOSTICS
-.\" .Sh COMPATIBILITY
 .Sh SEE ALSO
 .Xr spamassassin 1 ,
 .Xr spamd 1
-.\" .Sh HISTORY
 .Sh AUTHORS
 .An "Georg C. F. Greve" Aq greve@gnu.org
 .An "Dan Nelson" Aq dnelson@allantgroup.com
-.\" .Sh BUGS
