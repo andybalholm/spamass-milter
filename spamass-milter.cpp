@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.60 2003/08/06 04:29:48 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.61 2003/08/06 04:45:46 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -131,7 +131,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.60 2003/08/06 04:29:48 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.61 2003/08/06 04:45:46 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -769,6 +769,9 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
        } 
        catch (string& problem) {
          throw_error(problem);
+         ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
+         delete assassin;
+         debug(D_FUNC, "mlfi_header: exit error connect");
          return SMFIS_TEMPFAIL;
        };
      }
@@ -824,7 +827,7 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
       throw_error(problem);
       ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
       delete assassin;
-      debug(D_FUNC, "mlfi_header: exit error");
+      debug(D_FUNC, "mlfi_header: exit error output");
       return SMFIS_TEMPFAIL;
     };
   
@@ -856,6 +859,10 @@ mlfi_eoh(SMFICTX* ctx)
        } 
        catch (string& problem) {
          throw_error(problem);
+         ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
+         delete assassin;
+
+         debug(D_FUNC, "mlfi_eoh: exit error connect");
          return SMFIS_TEMPFAIL;
        };
      }
@@ -869,7 +876,7 @@ mlfi_eoh(SMFICTX* ctx)
       ((struct context *)smfi_getpriv(ctx))->assassin=NULL;
       delete assassin;
   
-      debug(D_FUNC, "mlfi_eoh: exit error");
+      debug(D_FUNC, "mlfi_eoh: exit error output");
       return SMFIS_TEMPFAIL;
     };
   
