@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.85 2004/09/24 04:42:16 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.86 2005/02/05 07:03:22 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.85 2004/09/24 04:42:16 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.86 2005/02/05 07:03:22 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -460,7 +460,9 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 			   send another copy.  The milter API will not let you send the
 			   message AND return a failure code to the sender, so this is
 			   the only way to do it. */
+#if defined(__FreeBSD__)
 			int rv;
+#endif
 			
 #if defined(HAVE_ASPRINTF)
 			char *buf;
@@ -804,7 +806,9 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	struct context *sctx = (struct context*)smfi_getpriv(ctx);
 	SpamAssassin* assassin = sctx->assassin;
 	FILE *p;
+#if defined(__FreeBSD__)
 	int rv;
+#endif
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
 
