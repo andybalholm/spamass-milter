@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.4 2002/01/31 15:28:34 greve Exp $
+//  $Id: spamass-milter.cpp,v 1.5 2002/01/31 15:34:43 greve Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -365,7 +365,7 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
       
       // X-Spam-Checker-Version:
       if ( cmp_nocase_partial(string("X-Spam-Checker-Version"), string(headerf)) == 0 )
-	assassin->set_spam_spam_checker_version(string(headerv));
+	assassin->set_spam_checker_version(string(headerv));
 
     };
 
@@ -718,7 +718,7 @@ SpamAssassin::spam_prev_content_type()
 };
 
 string& 
-spam_checker_version()
+SpamAssassin::spam_checker_version()
 {
   return x_spam_checker_version;
 };
