@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.13 2002/08/14 16:15:10 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.14 2002/08/23 16:59:38 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -334,7 +334,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
       if (old > 0 && newstring != oldstring)
 	smfi_chgheader(ctx,"Content-Type",1,newstring.size() > 0 ? 
 		       const_cast<char*>(newstring.c_str()) : NULL );
-      else if (assassin->content_type().size()>0)
+      else if (newstring.size()>0)
 	smfi_addheader(ctx, "Content-Type", 
 		       const_cast<char*>(newstring.c_str()));
       
