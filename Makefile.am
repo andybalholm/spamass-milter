@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.17 2003/08/04 23:03:42 dnelson Exp $
+## $Id: Makefile.am,v 1.18 2003/09/05 16:42:35 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
@@ -29,12 +29,8 @@ upload: dist-all
 changelog:
 	cvs2cl --no-wrap -S -U contrib/users 
 
-# Can't distribute mdoc2man yet
-#.1.man: mdoc2man.awk
-#	$(AWK) -f mdoc2man.awk $< > $@
-
-spamass-milter.man.in: spamass-milter.1.in mdoc2man.awk
-	$(AWK) -f mdoc2man.awk spamass-milter.1.in > $@
+.1.man: mdoc2man.awk
+	$(AWK) -f mdoc2man.awk $< > $@
 
 if HAVE_MDOC
 man_MANS = 	spamass-milter.1
@@ -55,7 +51,6 @@ EXTRA_DIST =	$(DEB_CONTRIB) \
 		$(FBSD_CONTRIB) \
 		$(MISC_CONTRIB) \
 		spamass-milter.1.in \
-		spamass-milter.man.in \
 		subst_poll.h
 
 spamass-milter.cpp: spamass-milter.h
