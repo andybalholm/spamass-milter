@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.74 2004/02/22 04:18:00 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.75 2004/03/18 18:37:08 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.74 2004/02/22 04:18:00 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.75 2004/03/18 18:37:08 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -148,6 +148,7 @@ struct smfiDesc smfilter =
 
 const char *const debugstrings[] = {
 	"ALL", "FUNC", "POLL", "UORI", "STR", "MISC", "NET", "SPAMC", "RCPT",
+	"COPY",
 	NULL
 };
 
@@ -168,6 +169,10 @@ bool flag_bucket_only = false;
 char *spambucket;
 bool flag_full_email = false;		/* pass full email address to spamc */
 bool flag_expand = false;	/* alias/virtusertable expansion */
+
+#if defined(__FreeBSD__) /* popen bug - see PR bin/50770 */
+static pthread_mutex_t popen_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 // {{{ main()
 
@@ -273,21 +278,24 @@ main(int argc, char* argv[])
    if (!sock || err) {
       cout << PACKAGE_NAME << " - Version " << PACKAGE_VERSION << endl;
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
-      cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-e]" << endl;
-      cout << "                      [-D host] [-f] [-i networks] [-m] [-M] [-r nn]" << endl;
-      cout << "                      [-u defaultuser] [-x] [-- spamc args ]" << endl;
+      cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-D host]" << endl;
+      cout << "                      [-e defaultdomain] [-f] [-i networks] [-m] [-M]" << endl;
+      cout << "                      [-P pidfile] [-r nn] [-u defaultuser] [-x]" << endl;
+      cout << "                      [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
       cout << "          recipient(s) will not receive anything." << endl;
       cout << "   -B bucket: add this mail address as a BCC recipient of spam." << endl;
       cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
       cout << "   -D host: connect to spamd at remote host (deprecated)" << endl;
-      cout << "   -e: pass full email address to spamc instead of just username" << endl;
+      cout << "   -e defaultdomain: pass full email address to spamc instead of just\n"
+              "          username.  Uses 'defaultdomain' if there was none" << endl;
       cout << "   -f: fork into background" << endl;
       cout << "   -i: skip (ignore) checks from these IPs or netblocks" << endl;
-      cout << "       example: -i 192.168.12.5,10.0.0.0/8,172.16/255.255.0.0" << endl;
+      cout << "          example: -i 192.168.12.5,10.0.0.0/8,172.16/255.255.0.0" << endl;
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -M: don't modify the message at all" << endl;
+      cout << "   -P pidfile: Put processid in pidfile" << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n"
               "          use -1 to reject any messages tagged by SA." << endl;
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
@@ -438,6 +446,66 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 	{
 		debug(D_MISC, "Rejecting");
 		smfi_setreply(ctx, "550", "5.7.1", "Blocked by SpamAssassin");
+
+
+		if (flag_bucket)
+		{
+			/* If we also want a copy of the spam, shell out to sendmail and
+			   send another copy.  The milter API will not let you send the
+			   message AND return a failure code to the sender, so this is
+			   the only way to do it. */
+			int rv;
+			
+#if defined(HAVE_ASPRINTF)
+			char *buf;
+#else
+			char buf[1024];
+#endif
+			char *fmt="%s \"%s\"";
+			FILE *p;
+
+#if defined(HAVE_ASPRINTF)
+			asprintf(&buf, fmt, SENDMAIL, spambucket);
+#else
+#if defined(HAVE_SNPRINTF)
+			snprintf(buf, sizeof(buf)-1, fmt, SENDMAIL, spambucket);
+#else
+			/* XXX possible buffer overflow here */
+			sprintf(buf, fmt, SENDMAIL, spambucket);
+#endif
+#endif
+
+			debug(D_COPY, "calling %s", buf);
+#if defined(__FreeBSD__) /* popen bug - see PR bin/50770 */
+			rv = pthread_mutex_lock(&popen_mutex);
+			if (rv)
+			{
+				debug(D_ALWAYS, "Could not lock popen mutex: %s", strerror(rv));
+				abort();
+			}		
+#endif
+			p = popen(buf, "w");
+			if (!p)
+			{
+				debug(D_COPY, "popen failed(%s).  Will not send a copy to spambucket", strerror(errno));
+			} else
+			{
+				// Send message provided by SpamAssassin
+				fwrite(assassin->d().c_str(), assassin->d().size(), 1, p);
+				pclose(p); p = NULL;
+			}
+#if defined(__FreeBSD__)
+			rv = pthread_mutex_unlock(&popen_mutex);
+			if (rv)
+			{
+				debug(D_ALWAYS, "Could not unlock popen mutex: %s", strerror(rv));
+				abort();
+			}		
+#endif
+#if defined(HAVE_ASPRINTF)
+			free(buf);
+#endif 
+		}
 		return SMFIS_REJECT;
 	}
   }
@@ -719,7 +787,6 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 // stores all addresses and the number thereof (some redundancy)
 //
 
-static pthread_mutex_t popen_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 sfsistat
 mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
@@ -727,7 +794,6 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	struct context *sctx = (struct context*)smfi_getpriv(ctx);
 	SpamAssassin* assassin = sctx->assassin;
 	FILE *p;
-	char buf[1024];
 	int rv;
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
@@ -735,18 +801,36 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	if (flag_expand)
 	{
 		/* open a pipe to sendmail so we can do address expansion */
-		sprintf(buf, "%s -bv \"%s\" 2>&1", SENDMAIL, envrcpt[0]);
+
+#if defined(HAVE_ASPRINTF)
+		char *buf;
+#else
+		char buf[1024];
+#endif
+		char *fmt="%s -bv \"%s\" 2>&1";
+
+#if defined(HAVE_ASPRINTF)
+		asprintf(&buf, fmt, SENDMAIL, envrcpt[0]);
+#else
+#if defined(HAVE_SNPRINTF)
+		snprintf(buf, sizeof(buf)-1, fmt, SENDMAIL, envrcpt[0]);
+#else
+		/* XXX possible buffer overflow here */
+		sprintf(buf, fmt, SENDMAIL, envrcpt[0]);
+#endif
+#endif
+
 		debug(D_RCPT, "calling %s", buf);
+
 #if defined(__FreeBSD__) /* popen bug - see PR bin/50770 */
-		debug(D_FUNC, "locking mutex");
 		rv = pthread_mutex_lock(&popen_mutex);
 		if (rv)
 		{
 			debug(D_ALWAYS, "Could not lock popen mutex: %s", strerror(rv));
 			abort();
 		}		
-		debug(D_FUNC, "locked mutex");
 #endif
+
 		p = popen(buf, "r");
 		if (!p)
 		{
@@ -778,15 +862,16 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 			pclose(p); p = NULL;
 		}
 #if defined(__FreeBSD__)
-		debug(D_FUNC, "unlocking mutex");
 		rv = pthread_mutex_unlock(&popen_mutex);
 		if (rv)
 		{
 			debug(D_ALWAYS, "Could not unlock popen mutex: %s", strerror(rv));
 			abort();
 		}		
-		debug(D_FUNC, "unlocked mutex");
 #endif
+#if defined(HAVE_ASPRINTF)
+		free(buf);
+#endif 
 	} else
 	{
 		assassin->expandedrcpt.push_back(envrcpt[0]);

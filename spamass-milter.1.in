@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.18 2004/01/27 19:39:43 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.19 2004/03/18 18:37:08 dnelson Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -16,8 +16,10 @@
 .Op Fl i Ar networks
 .Op Fl m
 .Op Fl M
+.Op Fl P Ar pidfile
 .Op Fl r Ar nn
 .Op Fl u Ar defaultuser
+.Op Fl x
 .Op Fl - Ar spamc flags ...
 .Sh DESCRIPTION
 The
@@ -149,6 +151,10 @@ If
 is used, the 
 .Ql X-Spam-Orig-To:
 headers will still be added.
+.It Fl P Ar pidfile
+Create the file
+.Ar pidfile ,
+containing the processid of the milter.
 .It Fl r Ar nn
 Reject scanned email if it greater than or equal to
 .Ar nn .
@@ -185,6 +191,14 @@ will make
 pass 
 .Fl u Ar user2
 to spamc.
+.It Fl x
+Pass the recipient address through 
+.Nm sendmail Fl bv ,
+which will perform virtusertable and alias expansion.
+The resulting username is then passed to spamc.
+Requires the
+.Fl u
+flag.  
 .It Fl - Ar spamc flags ...
 Pass all remaining options to spamc. 
 This allows you to connect to a remote spamd with

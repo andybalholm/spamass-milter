@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.37 2003/10/24 06:55:14 dnelson Exp $
+# $Id: configure.in,v 1.38 2004/03/18 18:37:07 dnelson Exp $
 AC_INIT(spamass-milter, 0.2.0+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.37 $)
+AC_REVISION($Revision: 1.38 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -99,6 +99,7 @@ DN_WITH_DMALLOC
 
 # Checks for library functions.
 AC_CHECK_FUNCS([vsyslog vasprintf vsnprintf])
+AC_CHECK_FUNCS([asprintf snprintf])
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 AC_SEARCH_LIBS(inet_aton, resolv)
