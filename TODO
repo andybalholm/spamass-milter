@@ -1,4 +1,4 @@
-$Id: TODO,v 1.7 2003/07/07 18:45:19 dnelson Exp $
+$Id: TODO,v 1.8 2003/07/09 17:58:04 dnelson Exp $
 
 *DONE* Clean up the reject/copy to spambox/deliver to recipient options:
 
@@ -11,7 +11,7 @@ $Id: TODO,v 1.7 2003/07/07 18:45:19 dnelson Exp $
 	-b null  N  N  N
 
 
-Try and expand aliases before checking for -u usernames
+Try and expand aliases before checking for -u usernames; sendmail -bv
 
 Add exclude lists to -i (tightest match wins)
 
