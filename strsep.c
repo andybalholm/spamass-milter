@@ -34,6 +34,9 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)strsep.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
+/* $FreeBSD: src/lib/libc/string/strsep.c,v 1.5 2002/03/21 18:44:54 obrien Exp $ */
+
+/* $Id */
 
 #include <string.h>
 #include <stdio.h>
