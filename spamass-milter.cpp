@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.42 2003/06/10 03:03:17 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.43 2003/06/10 04:47:22 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.42 2003/06/10 03:03:17 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.43 2003/06/10 04:47:22 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -194,7 +194,7 @@ main(int argc, char* argv[])
 			case 'B':
 				if (flag_bucket)
 				{
-					printf(stderr, "Can only have one -b or -B flag\n");
+					fprintf(stderr, "Can only have one -b or -B flag\n");
 					err = 1;
 					break;
 				}
