@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.36 2003/06/06 16:16:03 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.37 2003/06/06 16:22:05 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.36 2003/06/06 16:16:03 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.37 2003/06/06 16:22:05 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -367,7 +367,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 // retrieve the content of a specific field in the header
 // and return it.
 string
-retrieve_field(const string& header, const string& field)
+old_retrieve_field(const string& header, const string& field)
 {
   // look for beginning of content
   string::size_type pos = find_nocase(header, string("\n")+field+string(": "));
@@ -400,6 +400,74 @@ retrieve_field(const string& header, const string& field)
   return header.substr(pos, pos2-pos);
 
 }
+
+// retrieve the content of a specific field in the header
+// and return it.
+string
+retrieve_field(const string& header, const string& field)
+{
+  // Find the field
+  string::size_type field_start = string::npos;
+  string::size_type field_end = string::npos;
+  string::size_type idx = 0;
+
+  while( field_start == string::npos ) {
+	idx = find_nocase( header, field + string(":"), idx );
+
+	// no match
+	if ( idx == string::npos ) {
+	  return string( "" );
+	}
+
+	// The string we've found needs to be either at the start of the
+	// headers string, or immediately following a "\n"
+	if ( idx != 0 ) {
+	  if ( header[ idx - 1 ] != '\n' ) {
+		idx++; // so we don't get stuck in an infinite loop
+		continue; // loop around again
+	  }
+	}
+
+	field_start = idx;
+  }
+
+  // A mail field starts just after the header. Ideally, there's a
+  // space, but it's possible that there isn't.
+  field_start += field.length() + 1;
+  if ( field_start < ( header.length() - 1 ) && header[ field_start ] == ' ' ) {
+	field_start++;
+  }
+
+  // See if there's anything left, to shortcut the rest of the
+  // function.
+  if ( field_start == header.length() - 1 ) {
+	return string( "" );
+  }
+
+  // The field continues to the end of line. If the start of the next
+  // line is whitespace, then the field continues.
+  idx = field_start;
+  while( field_end == string::npos ) {
+	idx = header.find( "\n", idx );
+
+	// if we don't find a "\n", gobble everything to the end of the headers
+	if ( idx == string::npos ) {
+	  field_end = header.length();
+	} else {
+	  // check the next character
+	  if (( idx + 1 ) < header.length() && ( isspace( header[ idx + 1 ] ))) {
+		idx ++; // whitespace found, so wrap to the next line
+	  } else {
+		field_end = idx;
+	  }
+	}
+  }
+
+  //  Maybe remove the whitespace picked up when a header wraps - this
+  //  might actually be a requirement
+  return header.substr( field_start, field_end - field_start );
+}
+
 
 // }}}
 
