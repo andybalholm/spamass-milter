@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.67 2003/09/03 04:53:16 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.68 2003/09/12 05:42:07 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -81,6 +81,7 @@
 #include <fcntl.h>
 #include <syslog.h>
 #include <signal.h>
+#include <pthread.h>
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #else
@@ -131,7 +132,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.67 2003/09/03 04:53:16 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.68 2003/09/12 05:42:07 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -310,7 +311,7 @@ main(int argc, char* argv[])
 	} else {
       debug(D_MISC, "smfi_register succeeded");
    }
-	debug(D_ALWAYS, "spamass-milter %s starting", PACKAGE_VERSION);
+	debug(D_ALWAYS, "spamass-milter %s ($Revision: 1.68 $) starting", PACKAGE_VERSION);
 	err = smfi_main();
 	debug(D_ALWAYS, "spamass-milter %s exiting", PACKAGE_VERSION);
 	return err;
@@ -685,6 +686,9 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
 // stores the first recipient in the spamassassin object and
 // stores all addresses and the number thereof (some redundancy)
 //
+
+static pthread_mutex_t popen_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 sfsistat
 mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 {
@@ -692,12 +696,23 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	SpamAssassin* assassin = sctx->assassin;
 	FILE *p;
 	char buf[1024];
+	int rv;
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
 
 	/* open a pipe to sendmail so we can do address expansion */
 	sprintf(buf, "%s -bv \"%s\" 2>&1", SENDMAIL, envrcpt[0]);
 	debug(D_RCPT, "calling %s", buf);
+#if defined(__FreeBSD__)
+	debug(D_FUNC, "locking mutex");
+	rv = pthread_mutex_lock(&popen_mutex);
+	if (rv)
+	{
+		debug(D_ALWAYS, "Could not lock popen mutex: %s", strerror(rv));
+		abort();
+	}		
+	debug(D_FUNC, "locked mutex");
+#endif
 	p = popen(buf, "r");
 	if (!p)
 	{
@@ -728,6 +743,16 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	}
 	debug(D_RCPT, "Total of %d actual recipients", (int)assassin->expandedrcpt.size());
 	pclose(p); p = NULL;
+#if defined(__FreeBSD__)
+	debug(D_FUNC, "unlocking mutex");
+	rv = pthread_mutex_unlock(&popen_mutex);
+	if (rv)
+	{
+		debug(D_ALWAYS, "Could not unlock popen mutex: %s", strerror(rv));
+		abort();
+	}		
+	debug(D_FUNC, "unlocked mutex");
+#endif
 
 	if (assassin->numrcpt() == 0)
 	{
