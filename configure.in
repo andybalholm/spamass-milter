@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.31 2003/08/11 21:36:32 dnelson Exp $
+# $Id: configure.in,v 1.32 2003/08/13 03:47:56 dnelson Exp $
 AC_INIT(spamass-milter, 0.2.0+cvs)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.31 $)
+AC_REVISION($Revision: 1.32 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -22,11 +22,20 @@ PIKE_LIBRARY_PATHS
 
 # Search for spamc
 dnl AC_ARG_VAR(SPAMC,[Spamc command])
-AC_PATH_PROGS(SPAMC, spamc)
+AC_PATH_PROG(SPAMC, spamc)
 if test "x$SPAMC" = x ; then
-   AC_MSG_ERROR([Spamc not found. Is SpamAssassin installed?])
+   AC_MSG_ERROR([Spamc not found.  Is SpamAssassin installed?])
 fi
-AC_DEFINE_UNQUOTED(SPAMC, "$SPAMC", [Spamc command])
+AC_ARG_VAR(SPAMC, [Path to spamc])
+AC_DEFINE_UNQUOTED(SPAMC, "$SPAMC", [Path to spamc])
+
+# Search for sendmail
+AC_PATH_PROG(SENDMAIL, sendmail,, [$PATH:/usr/lib])
+if test "x$SENDMAIL" = x ; then
+   AC_MSG_ERROR([Sendmail not found.  Check your $PATH variable])
+fi
+AC_ARG_VAR(SENDMAIL, [Path to sendmail])
+AC_DEFINE_UNQUOTED(SENDMAIL, "$SENDMAIL", [Path to sendmail])
 
 # Check nroff and the options it supports
 AC_CHECK_PROGS(NROFF, nroff)
@@ -58,7 +67,7 @@ LIBS="$LIBS $PTHREAD_LIBS"
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([fcntl.h paths.h syslog.h sys/select.h])
+AC_CHECK_HEADERS([fcntl.h syslog.h sys/cdefs.h sys/select.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

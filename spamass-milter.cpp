@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.63 2003/08/11 22:12:19 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.64 2003/08/13 03:47:56 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -81,9 +81,6 @@
 #include <fcntl.h>
 #include <syslog.h>
 #include <signal.h>
-#ifdef HAVE_PATHS_H
-#include <paths.h>
-#endif
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #else
@@ -134,7 +131,7 @@ char *strsep(char **stringp, const char *delim);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.63 2003/08/11 22:12:19 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.64 2003/08/13 03:47:56 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -263,7 +260,7 @@ main(int argc, char* argv[])
       cout << "          recipient(s) will not receive anything." << endl;
       cout << "   -B bucket: add this mail address as a BCC recipient of spam." << endl;
       cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
-      cout << "   -D host: connect to spand at remote host (deprecated)" << endl;
+      cout << "   -D host: connect to spamd at remote host (deprecated)" << endl;
       cout << "   -f: fork into background" << endl;
       cout << "   -i: skip (ignore) checks from these IPs or netblocks" << endl;
       cout << "       example: -i 192.168.12.5,10.0.0.0/8,172.16/255.255.0.0" << endl;
@@ -689,25 +686,27 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	debug(D_FUNC, "mlfi_envrcpt: enter");
 
 	/* open a pipe to sendmail so we can do address expansion */
-	sprintf(buf,"%s -bv \"%s\"",_PATH_SENDMAIL, envrcpt[0]);
+	sprintf(buf, "%s -bv \"%s\"", SENDMAIL, envrcpt[0]);
 	debug(D_RCPT, "calling %s", buf);
-	p = popen(buf,"r");
+	p = popen(buf, "r");
 	if (!p)
 	{
-		debug(D_RCPT, "popen failed. Will not expand aliases: ", strerror(errno));
+		debug(D_RCPT, "popen failed(%s).  Will not expand aliases", strerror(errno));
 	} else
-	while (fgets(buf,sizeof(buf),p) != NULL)
 	{
-		int i=strlen(buf);
-        while (i > 0 && buf[i - 1] <= ' ')
-			i--;
-		buf[i] = '\0';
-		debug(D_RCPT, "sendmail output: %s", buf);
-		if (strstr(buf, "... deliverable: mailer "))
+		while (fgets(buf, sizeof(buf), p) != NULL)
 		{
-			char *p=strstr(buf,", user ");
-			debug(D_RCPT, "user: %s", p+7);
-			newrecipients.push_back(p+7);
+			int i=strlen(buf);
+			while (i > 0 && buf[i - 1] <= ' ')
+				i--;
+			buf[i] = '\0';
+			debug(D_RCPT, "sendmail output: %s", buf);
+			if (strstr(buf, "... deliverable: mailer "))
+			{
+				char *p=strstr(buf,", user ");
+				debug(D_RCPT, "user: %s", p+7);
+				newrecipients.push_back(p+7);
+			}
 		}
 	}
 	debug(D_RCPT, "Expanded to %d recipients", (int)newrecipients.size());

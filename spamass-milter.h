@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.18 2003/08/11 21:36:32 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.19 2003/08/13 03:47:56 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -25,6 +25,16 @@
 //   Contact:
 //            Michael Brown <michaelb@opentext.com>
 //
+#ifndef _SPAMASS_MILTER_H
+#define _SPAMASS_MILTER_H
+
+#ifdef HAVE_CDEFS_H
+#include <sys/cdefs.h>
+#endif
+#if !defined(__printflike)
+#define __printflike(a,b)
+#endif
+
 #include <list>
 
 using namespace std;
@@ -162,7 +172,7 @@ typedef string::size_type (SpamAssassin::*t_setter)(const string &val);
 int assassinate(SMFICTX*, SpamAssassin*);
 
 void throw_error(const string&);
-void debug(enum debuglevel, const char* fmt, ...); /* __printflike(2, 3); */
+void debug(enum debuglevel, const char* fmt, ...) __printflike(2, 3);
 string::size_type find_nocase(const string&, const string&, string::size_type = 0);
 int cmp_nocase_partial(const string&, const string&);
 void closeall(int fd);
@@ -170,3 +180,5 @@ void parse_networklist(char *string, struct networklist *list);
 int ip_in_networklist(struct in_addr ip, struct networklist *list);
 void parse_debuglevel(char* string);
 char *strlwr(char *str);
+
+#endif
