@@ -1,7 +1,8 @@
 #!/bin/sh
 #
-# Sample init script for Debian GNU/Linux
+# $Id: spamass-milter,v 1.4 2002/07/24 16:19:53 dnelson Exp $
 #
+# Sample init script for Debian GNU/Linux
 #
 #  Copyright (c) 2002 Georg C. F. Greve <greve@gnu.org>,
 #   all rights maintained by FSF Europe e.V., 

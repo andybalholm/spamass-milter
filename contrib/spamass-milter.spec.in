@@ -1,0 +1,45 @@
+Summary: Spamassassin Milter
+Name: spamass-milter
+Version: @VERSION@
+Release:   3
+Source:    spamass-milter-%version.tar.gz
+Url: http://savannah.gnu.org/projects/spamass-milt/
+Copyright: GPL
+Group:     Networking/Mail
+BuildRoot: /var/tmp/spamass-milter-root
+Requires: spamassassin
+# Requires sendmail to have milter support, too.
+Requires: sendmail
+# This is for libmilter &c.
+BuildRequires: sendmail-devel
+# And this is for building the config scripts
+BuildRequires: autoconf253 automake15
+
+%description
+A little plugin for the Sendmail Milter (Mail Filter) library that pipes all
+incoming mail (including things received by rmail/UUCP) through the
+SpamAssassin, a highly customizable SpamFilter.
+
+%prep
+%setup
+
+%build
+./configure --prefix=$RPM_BUILD_ROOT/usr
+make
+
+%install
+make install
+mkdir -p $RPM_BUILD_ROOT/etc/init.d
+install -m755 contrib/spamass-milter-redhat.rc $RPM_BUILD_ROOT/etc/init.d/spamass-milter
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root)
+%doc AUTHORS ChangeLog COPYING INSTALL NEWS README
+/usr/sbin/spamass-milter
+/etc/init.d/spamass-milter
+
+%changelog
+

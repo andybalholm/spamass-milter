@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# $Id: spamass-milter-redhat.rc,v 1.1 2002/07/24 16:19:53 dnelson Exp $
+#
+# spamass-milter This script starts and stops the spamass-milter daemon
+#
+# chkconfig: 2345 80 30
+#
+# description: spamass-milter is a daemon which hooks into sendmail and routes
+#              email messages to spamassassin
+# processname: spamass-milter
+
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Local spamass-milter config
+SM_SOCKET=/var/run/spamass.sock
+SM_EXTRA_FLAGS=
+[ -x /etc/sysconfig/spamass-milter ] && . /etc/sysconfig/spamass-milter
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+[ -x /usr/sbin/spamass-milter ] || exit 0
+PATH=$PATH:/usr/bin:/usr/local/bin
+
+# See how we were called.
+case "$1" in
+  start)
+        # Start daemon.
+        echo -n "Starting spamass-milter: "
+        daemon spamass-milter -p ${SM_SOCKET} -f ${SM_EXTRA_FLAGS}
+        RETVAL=$?
+        touch /var/lock/subsys/spamass-milter
+        echo
+        ;;
+  stop)
+        # Stop daemons.
+        echo -n "Shutting down spamass-milter: "
+        killproc spamass-milter
+        RETVAL=$?
+        rm -f /var/lock/subsys/spamass-milter
+        echo
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  status)
+        status spamass-milter
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit 0
