@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.35 2003/06/06 16:10:29 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.36 2003/06/06 16:16:03 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -109,7 +109,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.35 2003/06/06 16:10:29 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.36 2003/06/06 16:16:03 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -599,7 +599,7 @@ mlfi_eoh(SMFICTX* ctx)
 
   try {
     // add blank line between header and body
-    assassin->output("\n\n",2);
+    assassin->output("\r\n",2);
   } catch (string& problem)
     {
       throw_error(problem);
