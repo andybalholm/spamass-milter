@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.12 2003/06/06 15:34:10 dnelson Exp $
+## $Id: Makefile.am,v 1.13 2003/06/10 05:52:49 dnelson Exp $
 
-AUTOMAKE_OPTIONS = no-dependencies foreign
+AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
 CLEANFILES = *~ .deps/* .libs/* .deps .libs spamass-milter.man
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in \
