@@ -1,0 +1,14 @@
+$Id: TODO,v 1.1 2003/06/07 19:50:29 dnelson Exp $
+
+Clean up the reject/copy to spambox/deliver to recipient options:
+
+         R  C  P
+
+-r       Y  -  -
+none     N  Y  Y
+-b       N  Y  N
+default  N  N  Y
+none     N  N  N
+
+With the current flags there is no way to silently drop the mail or
+both copy and deliver.
