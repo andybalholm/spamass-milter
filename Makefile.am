@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.19 2003/09/06 02:15:34 dnelson Exp $
+## $Id: Makefile.am,v 1.20 2005/02/04 19:25:04 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
@@ -10,6 +10,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in \
 	COPYING INSTALL config.guess config.sub install-sh missing mkinstalldirs \
 	$(distdir).tar.gz $(distdir).tar.bz2
 maintainer-clean-local:
+	-chmod -R +w autom4te* $(distdir)
 	rm -rf autom4te* $(distdir)
 distclean-local:
 	rm -f configure.lineno
