@@ -1,8 +1,9 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.1 2002/01/16 20:26:23 greve Exp $
+## $Id: Makefile.am,v 1.2 2002/01/16 21:41:21 greve Exp $
 
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
+SPAMC = @SPAMC@
 
 INCLUDES = 
 LIBS = @LIBS@ /usr/lib/libmilter/libmilter.a /usr/lib/libmilter/libsm.a

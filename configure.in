@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.1 2002/01/16 20:26:23 greve Exp $
+dnl $Id: configure.in,v 1.2 2002/01/16 21:41:21 greve Exp $
 AC_INIT(configure.in)
 
 PACKAGE="spamass-milter"
@@ -28,6 +28,14 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
 
+dnl search for spamc
+AC_PATH_PROG(SPAMC, spamc)
+if test "$SPAMC" = "" ; then
+   AC_MSG_ERROR("Spamc not found. Is SpamAssassin installed?")
+fi
+AC_DEFINE_UNQUOTED(SPAMC, "$SPAMC")
+AC_SUBST(SPAMC)
+
 dnl now some other stuff
 AM_CONFIG_HEADER(config.h)
 AM_SANITY_CHECK
@@ -37,7 +45,7 @@ AC_PROG_INSTALL
 AC_HEADER_STDC
 AC_CANONICAL_HOST
 
-dnl library
+dnl check for GNU POSIX thread library
 AC_CHECK_LIB(pthread, pthread_create)
 
 dnl
