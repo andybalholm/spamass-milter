@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.25 2003/03/06 21:33:47 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.26 2003/03/06 21:37:18 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -78,7 +78,11 @@
 #include <fcntl.h>
 #include <syslog.h>
 #include <signal.h>
+#ifdef HAVE_POLL_H
 #include <poll.h>
+#else
+#include "subst_poll.h"
+#endif
 #include <errno.h>
 
 // C++ includes
@@ -104,7 +108,7 @@ extern "C" {
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.25 2003/03/06 21:33:47 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.26 2003/03/06 21:37:18 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {

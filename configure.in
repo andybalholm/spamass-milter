@@ -1,8 +1,8 @@
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.in,v 1.17 2002/12/31 20:17:31 dnelson Exp $
+# $Id: configure.in,v 1.18 2003/03/06 21:37:18 dnelson Exp $
 AC_INIT(spamass-milter, 0.1.3a)
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.17 $)
+AC_REVISION($Revision: 1.18 $)
 AC_CONFIG_SRCDIR([spamass-milter.cpp])
 
 # Initialize automake now
@@ -34,6 +34,12 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 
 CF_GNU_SOURCE
+
+# If the system doesn't have poll.h, provide our own poll function
+AC_CHECK_HEADER(poll.h,,[
+	AC_MSG_NOTICE([Emulating poll with select])
+	AC_LIBOBJ(poll)
+])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([vsyslog vasprintf vsnprintf])
