@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.21 2004/03/18 18:37:08 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.22 2004/09/21 20:51:06 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -127,7 +127,7 @@ private:
 public:  
   // flags
   bool error;
-  bool running;
+  bool running;		/* XXX merge running, connected, and pid */
   bool connected;	/* are we connected to spamc? */
 
   // This is where we store the mail after it
