@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.8 2002/12/23 17:08:30 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.9 2003/06/03 06:24:54 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -30,6 +30,7 @@ using namespace std;
 
 string retrieve_field(const string&, const string&);
 
+sfsistat mlfi_connect(SMFICTX*, char*, _SOCK_ADDR*);
 sfsistat mlfi_envrcpt(SMFICTX*, char**);
 sfsistat mlfi_envfrom(SMFICTX*, char**);
 sfsistat mlfi_header(SMFICTX*, char*, char*);
@@ -41,6 +42,18 @@ sfsistat mlfi_abort(SMFICTX*);
 sfsistat mlfi_abort(SMFICTX*);
 
 extern struct smfiDesc smfilter;
+
+struct network 
+{
+	struct in_addr network;
+	struct in_addr netmask;
+};
+
+struct networklist
+{
+	struct network *nets;
+	int num_nets;
+};
 
 class SpamAssassin {
 public:
@@ -115,3 +128,5 @@ void debug(int level, const char* string, ...);
 string::size_type find_nocase(const string&, const string&, string::size_type = 0);
 int cmp_nocase_partial(const string&, const string&);
 void closeall(int fd);
+void parse_networklist(char *string, struct networklist *list);
+int ip_in_networklist(struct in_addr ip, struct networklist *list);
