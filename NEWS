@@ -1,8 +1,12 @@
-$Id: NEWS,v 1.17 2003/08/05 04:13:33 dnelson Exp $
+$Id: NEWS,v 1.18 2003/10/21 21:41:05 dnelson Exp $
 
 unreleased:
  * -M option which disables all message modifications
  * Fixed crash on spam with no body at all
+ * -e option to pass full recipient email address to spamc
+ * recipients are expanded with sendmail -bv
+ * -f truly daemonizes now, instead of simply forking
+ * -P option to create a pidfile
 
 0.2.0: (2003-06-26)
  * -b/-B options to redirect tagged messages to another email address.
