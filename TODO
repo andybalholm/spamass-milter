@@ -1,4 +1,4 @@
-$Id: TODO,v 1.6 2003/07/02 22:28:56 dnelson Exp $
+$Id: TODO,v 1.7 2003/07/07 18:45:19 dnelson Exp $
 
 *DONE* Clean up the reject/copy to spambox/deliver to recipient options:
 
@@ -18,3 +18,8 @@ Add exclude lists to -i (tightest match wins)
 Add flag to pass full username@domain to spamc
 
 Add recipient debug flag to help diagnose -u/-b/-B problems
+
+Allow customized reject message with -r.  
+Option 1 - new flag.  -R "go away"
+Option 2 - overload -r.  -r "20,go away"
+
