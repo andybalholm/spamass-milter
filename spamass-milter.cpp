@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.76 2004/05/10 18:59:32 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.77 2004/05/13 21:43:53 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.76 2004/05/10 18:59:32 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.77 2004/05/13 21:43:53 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -886,12 +886,11 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 		*/
 		const char *macro_b, *macro_s;
 
-		/* If the user did not enable the {b} macro in sendmail.cf
-		   just make it blank. Without this date SA can't do
-		   future/past validation on the Date: header */
+		/* Failure to fetch {b} is not fatal.  Without this date SA can't do
+		   future/past validation on the Date: header, but sendmail doesn't
+		   default to allow milters to see it.
+		*/
 		macro_b = smfi_getsymval(ctx, "b");
-		if (!macro_b)
-			macro_b = "";
 			
 		/* Sendmail currently cannot pass us the {s} macro, but
 		   I do not know why.  Leave this in for the day sendmail is
@@ -905,10 +904,15 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 			macro_s = "nohelo";
 
 		assassin->output((string)"X-Envelope-From: "+assassin->from()+"\r\n");
-		assassin->output((string)"X-Envelope-To: "+assassin->rcpt()+"\r\n");
-		assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+"; "+macro_b+"\r\n");
+		assassin->output((string)"X-Envelope-To: "+envrcpt[0]+"\r\n");
 
-	}
+		if (!macro_b)
+			assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+";\r\n");
+		else
+			assassin->output((string)"Received: from "+macro_s+" ("+smfi_getsymval(ctx,"_")+") by "+smfi_getsymval(ctx,"j")+"; "+macro_b+"\r\n");
+
+	} else
+		assassin->output((string)"X-Envelope-To: "+envrcpt[0]+"\r\n");
 
 	/* increment RCPT TO: count */
 	assassin->set_numrcpt();
