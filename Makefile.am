@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.7 2002/09/18 17:17:43 dnelson Exp $
+## $Id: Makefile.am,v 1.8 2002/11/15 07:18:26 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign
 
@@ -16,11 +16,11 @@ distclean-local:
 # (i.e. clean CVS co)
 dist-hook: 
 	if test ! -s $(distdir)/ChangeLog ; then \
-		cvs2cl --fsf -S -U contrib/users --stdout > $(distdir)/ChangeLog ; \
+		cvs2cl --no-wrap -S -U contrib/users --stdout > $(distdir)/ChangeLog ; \
 	fi
 
 changelog:
-	cvs2cl --fsf -S -U contrib/users 
+	cvs2cl --no-wrap -S -U contrib/users 
 
 man_MANS = 	spamass-milter.1
 sbin_PROGRAMS =	spamass-milter
