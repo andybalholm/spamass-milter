@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.73 2004/02/22 04:16:27 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.74 2004/02/22 04:18:00 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.73 2004/02/22 04:16:27 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.74 2004/02/22 04:18:00 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
