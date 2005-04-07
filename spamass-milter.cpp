@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.87 2005/02/22 16:10:04 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.88 2005/04/07 02:04:24 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.87 2005/02/22 16:10:04 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.88 2005/04/07 02:04:24 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -169,6 +169,7 @@ bool flag_bucket_only = false;
 char *spambucket;
 bool flag_full_email = false;		/* pass full email address to spamc */
 bool flag_expand = false;	/* alias/virtusertable expansion */
+bool warnedmacro = false;	/* have we logged that we couldn't fetch a macro? */
 
 #if defined(__FreeBSD__) /* popen bug - see PR bin/50770 */
 static pthread_mutex_t popen_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -699,6 +700,7 @@ sfsistat
 mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 {
 	struct context *sctx;
+	int rv;
 
 	debug(D_FUNC, "mlfi_connect: enter");
 
@@ -717,7 +719,13 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 	sctx->helo = NULL;
 	
 	/* store a pointer to it with setpriv */
-	smfi_setpriv(ctx, sctx);
+	rv = smfi_setpriv(ctx, sctx);
+	if (rv != MI_SUCCESS)
+	{
+		debug(D_ALWAYS, "smfi_setpriv failed!");
+		return SMFIS_TEMPFAIL;
+	}
+	/* debug(D_ALWAYS, "ZZZ set private context to %p", sctx); */
 
 	if (ip_in_networklist(sctx->connect_ip, &ignorenets))
 	{
@@ -761,6 +769,13 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
   struct context *sctx = (struct context *)smfi_getpriv(ctx);
   char *queueid;
 
+  if (sctx == NULL)
+  {
+    debug(D_ALWAYS, "smfi_getpriv failed!");
+    return SMFIS_TEMPFAIL;
+  }
+  /* debug(D_ALWAYS, "ZZZ got private context %p", sctx); */
+
   debug(D_FUNC, "mlfi_envfrom: enter");
   try {
     // launch new SpamAssassin
@@ -781,7 +796,10 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
   
   queueid=smfi_getsymval(ctx,"i");
   if (!queueid)
-    queueid="unk";
+  {
+    queueid="unknown";
+    warnmacro("i", "ENVFROM");
+  }
   assassin->queueid = queueid;
 
   debug(D_MISC, "queueid=%s", queueid);
@@ -898,13 +916,44 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 				(envelope-from $g)$.
 		   
 		*/
-		const char *macro_b, *macro_s, *macro_j, *macro__;
+		const char *macro_b, *macro_i, *macro_j, *macro_r,
+		           *macro_s, *macro_v, *macro_Z, *macro__;
+		char date[32];
 
-		/* Failure to fetch {b} is not fatal.  Without this date SA can't do
-		   future/past validation on the Date: header, but sendmail doesn't
-		   default to allow milters to see it.
-		*/
+		/* RFC 822 date. */
 		macro_b = smfi_getsymval(ctx, "b");
+		if (!macro_b)                                  
+		{
+			time_t tval;
+			time(&tval);
+			strftime(date, sizeof(date), "%a, %d %b %Y %H:%M:%S %z", localtime(&tval));
+			macro_b = date;
+			warnmacro("b", "ENVRCPT");
+		}
+
+		/* queue ID */
+		macro_i = smfi_getsymval(ctx, "i");
+		if (!macro_i)
+		{
+			macro_i = "unknown";
+			warnmacro("i", "ENVRCPT");
+		}
+
+		/* FQDN of this site */
+		macro_j = smfi_getsymval(ctx, "j");
+		if (!macro_j)
+		{
+			macro_j = "localhost";
+			warnmacro("j", "ENVRCPT");
+		}
+
+		/* Protocol used to receive the message */
+		macro_r = smfi_getsymval(ctx, "r");
+		if (!macro_r)
+		{
+			macro_r = "SMTP";
+			warnmacro("r", "ENVRCPT");
+		}
 			
 		/* Sendmail currently cannot pass us the {s} macro, but
 		   I do not know why.  Leave this in for the day sendmail is
@@ -917,23 +966,38 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 		if (!macro_s)
 			macro_s = "nohelo";
 
-		/* FQDN of this site */
-		macro_j = smfi_getsymval(ctx, "j");
-		if (!macro_j)
-			macro_j = "localhost";
+		/* Sendmail binary version */
+		macro_v = smfi_getsymval(ctx, "v");
+		if (!macro_v)
+		{
+			macro_v = "8.13.0";
+			warnmacro("v", "ENVRCPT");
+		}
 
-		/* Sending site's address */
+		/* Sendmail .cf version */
+		macro_Z = smfi_getsymval(ctx, "Z");
+		if (!macro_Z)
+		{
+			macro_Z = "8.13.0";
+			warnmacro("Z", "ENVRCPT");
+		}
+
+		/* Validated sending site's address */
 		macro__ = smfi_getsymval(ctx, "_");
 		if (!macro__)
+		{
 			macro__ = "unknown";
+			warnmacro("_", "ENVRCPT");
+		}
 
 		assassin->output((string)"X-Envelope-From: "+assassin->from()+"\r\n");
 		assassin->output((string)"X-Envelope-To: "+envrcpt[0]+"\r\n");
 
-		if (!macro_b)
-			assassin->output((string)"Received: from "+macro_s+" ("+macro__+") by "+macro_j+";\r\n");
-		else
-			assassin->output((string)"Received: from "+macro_s+" ("+macro__+") by "+macro_j+"; "+macro_b+"\r\n");
+		assassin->output((string)
+			"Received: from "+macro_s+" ("+macro__+")\r\n\t"+
+			"by "+macro_j+"("+macro_v+"/"+macro_Z+") with "+macro_r+" id "+macro_i+"\r\n\t"+
+			macro_b+"\r\n\t"+
+			"(envelope-from "+assassin->from()+"\r\n");
 
 	} else
 		assassin->output((string)"X-Envelope-To: "+envrcpt[0]+"\r\n");
@@ -1965,7 +2029,7 @@ cmp_nocase_partial(const string& s, const string& s2)
   string::const_iterator p=s.begin();
   string::const_iterator p2=s2.begin();
 
-  while ( p != s.end() && p2 != s2.end() ) {
+  while ( p != s.end() && p2 <= s2.end() ) {
     if (toupper(*p) != toupper(*p2))
     {
       debug(D_STR, "c_nc_p: <%s><%s> : miss", s.c_str(), s2.c_str());
@@ -2077,6 +2141,16 @@ char *strlwr(char *str)
         s++;
     }
     return str;
+}
+
+/* Log a message about missing milter macros, but only the first time */
+void warnmacro(char *macro, char *scope)
+{
+	if (warnedmacro)
+		return;
+	debug(D_ALWAYS, "Could not retrieve sendmail macro \"%s\"!.  Please add it to confMILTER_MACROS_%s for better spamassassin results",
+		macro, scope);
+	warnedmacro = true;
 }
 
 // }}}
