@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.88 2005/04/07 02:04:24 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.89 2005/06/02 18:30:25 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.88 2005/04/07 02:04:24 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.89 2005/06/02 18:30:25 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -1246,11 +1246,8 @@ mlfi_close(SMFICTX* ctx)
   
   sctx = (struct context*)smfi_getpriv(ctx);
   if (sctx == NULL)
-  {
-    /* the context should have been set in mlfi_connect */
-  	debug(D_ALWAYS, "NULL context in mlfi_close! Should not happen!");
     return SMFIS_ACCEPT;
-  }
+
   if (sctx->helo)
   	free(sctx->helo);
   free(sctx);
