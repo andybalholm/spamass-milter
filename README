@@ -1,4 +1,4 @@
-$Id: README,v 1.5 2005/04/07 02:04:24 dnelson Exp $
+$Id: README,v 1.6 2005/08/15 15:10:47 dnelson Exp $
 
 Spamass-Milter, a small
  - SpamAssassin Sendmail Mail Filter (Milter) Plugin 
@@ -27,10 +27,11 @@ BEFORE INSTALLING & TRYING TO USE THIS PROGRAM, PLEASE MAKE SURE THAT
 SPAMC/SPAMD DOES EXACTLY WHAT YOU WANT; OTHERWISE YOU MIGHT RISK
 LOSING MAIL.
 
-Theoretically, "./configure ; make ; make install" (see INSTALL)
-should do the trick. If it doesn't, you may be missing something or
-the configuration may not be working for you. 
-
+"./configure ; make ; make install" should do the trick.  If it
+doesn't, you may be missing something or the configuration may not be
+working for you.  If you are not using a release tarball, you will need
+to have automake and autoconf installed, and run "./autogen.sh" to
+generate the configure script first.
 
 Configuration:
 --------------
