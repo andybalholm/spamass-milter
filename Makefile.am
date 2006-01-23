@@ -1,10 +1,10 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.21 2005/02/05 07:34:11 dnelson Exp $
+## $Id: Makefile.am,v 1.22 2006/01/23 20:47:11 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
 # The number of files autoconf leaves lying around after a clean is amazing.
-CLEANFILES = *~ .deps/* .libs/* .deps .libs spamass-milter.man
+CLEANFILES = *~ .libs/* .libs spamass-milter.man
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in \
 	config.log config.status configure configure.lineno stamp-h.in \
 	COPYING INSTALL config.guess config.sub install-sh missing mkinstalldirs \
