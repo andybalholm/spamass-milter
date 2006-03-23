@@ -1,4 +1,9 @@
-$Id: NEWS,v 1.23 2005/02/04 18:55:32 dnelson Exp $
+$Id: NEWS,v 1.24 2006/03/23 21:51:07 dnelson Exp $
+
+cvs: (date)
+ * Ensure wrapped headers always use LF (fix for spamassassin 3.1.1)
+ * Mimic sendmail's Received header even better.  Logs a warning
+   to syslog if it can't fetch a sendmail macro that would help.
 
 0.3.0: (2005-02-03)
  * -M option which disables all message modifications
