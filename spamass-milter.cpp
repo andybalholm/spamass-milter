@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.90 2006/03/23 21:41:36 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.91 2006/07/24 19:59:17 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.90 2006/03/23 21:41:36 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.91 2006/07/24 19:59:17 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -1002,9 +1002,9 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 
 		assassin->output((string)
 			"Received: from "+macro_s+" ("+macro__+")\r\n\t"+
-			"by "+macro_j+"("+macro_v+"/"+macro_Z+") with "+macro_r+" id "+macro_i+"\r\n\t"+
+			"by "+macro_j+"("+macro_v+"/"+macro_Z+") with "+macro_r+" id "+macro_i+";\r\n\t"+
 			macro_b+"\r\n\t"+
-			"(envelope-from "+assassin->from()+"\r\n");
+			"(envelope-from "+assassin->from()+")\r\n");
 
 	} else
 		assassin->output((string)"X-Envelope-To: "+envrcpt[0]+"\r\n");
