@@ -89,6 +89,7 @@
 #endif
 #include <errno.h>
 #include <netdb.h>
+#include <grp.h>
 
 // C++ includes
 #include <cstdio>
@@ -184,8 +185,9 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "afd:mMp:P:r:u:D:i:b:B:e:xS:R:C:";
+   const char *args = "afd:mMp:P:r:u:D:i:b:B:e:xS:R:C:g:";
    char *sock = NULL;
+   char *group = NULL;
    bool dofork = false;
    char *pidfilename = NULL;
    FILE *pidfile = NULL;
@@ -205,6 +207,9 @@ main(int argc, char* argv[])
                 break;
             case 'f':
                 dofork = true;
+                break;
+            case 'g':
+                group = strdup(optarg);
                 break;
             case 'd':
                 parse_debuglevel(optarg);
@@ -298,7 +303,7 @@ main(int argc, char* argv[])
       cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-D host]" << endl;
       cout << "                      [-e defaultdomain] [-f] [-i networks] [-m] [-M]" << endl;
       cout << "                      [-P pidfile] [-r nn] [-u defaultuser] [-x] [-a]" << endl;
-      cout << "                      [-C rejectcode] [ -R rejectmsg ]" << endl;
+      cout << "                      [-C rejectcode] [-R rejectmsg] [-g group]" << endl;
       cout << "                      [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
@@ -310,6 +315,7 @@ main(int argc, char* argv[])
       cout << "   -e defaultdomain: pass full email address to spamc instead of just\n"
               "          username.  Uses 'defaultdomain' if there was none" << endl;
       cout << "   -f: fork into background" << endl;
+      cout << "   -g group: socket group (perms to 660 as well)" << endl;
       cout << "   -i: skip (ignore) checks from these IPs or netblocks" << endl;
       cout << "          example: -i 192.168.12.5,10.0.0.0/8,172.16.0.0/255.255.0.0" << endl;
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
@@ -378,6 +384,30 @@ main(int argc, char* argv[])
 	} else {
       debug(D_MISC, "smfi_register succeeded");
    }
+
+	if (group)
+	{
+		struct group *gr;
+
+		(void) smfi_opensocket(0);
+		gr = getgrnam(group);
+		if (gr)
+		{
+			int rc;
+			rc = chown(sock, (uid_t)-1, gr->gr_gid);
+			if (!rc)
+			{
+				(void) chmod(sock, 0660);
+			} else {
+				perror("group option, chown");
+				exit(EX_NOPERM);
+			}
+		} else {
+			perror("group option, getgrnam");
+			exit(EX_NOUSER);
+		}
+	}
+
 	debug(D_ALWAYS, "spamass-milter %s starting", PACKAGE_VERSION);
 	err = smfi_main();
 	debug(D_ALWAYS, "spamass-milter %s exiting", PACKAGE_VERSION);

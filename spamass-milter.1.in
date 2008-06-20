@@ -15,6 +15,7 @@
 .Op Fl D Ar host
 .Op Fl e Ar defaultdomain
 .Op Fl f
+.Op Fl g Ar group
 .Op Fl i Ar networks
 .Op Fl m
 .Op Fl M
@@ -118,6 +119,12 @@ flag.
 Causes
 .Nm
 to fork into the background.
+.It Fl g Ar group
+Makes the socket for communication with the MTA group-writable (mode 0750)
+and sets the socket's group to
+.Ar group .
+This option is intended for use with MTA's like Postfix that do not run as
+root, and is incompatible with Sendmail usage.
 .It Fl i Ar networks
 Ignores messages if the originating IP is in the network(s) listed.
 The message will be passed through without calling SpamAssassin at all.
