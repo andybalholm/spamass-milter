@@ -1026,7 +1026,7 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 
 		assassin->output((string)
 			"Received: from "+macro_s+" ("+macro__+")\r\n\t"+
-			"by "+macro_j+"("+macro_v+"/"+macro_Z+") with "+macro_r+" id "+macro_i+";\r\n\t"+
+			"by "+macro_j+" ("+macro_v+"/"+macro_Z+") with "+macro_r+" id "+macro_i+";\r\n\t"+
 			macro_b+"\r\n\t"+
 			"(envelope-from "+assassin->from()+")\r\n");
 
