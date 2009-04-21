@@ -168,9 +168,6 @@ public:
   // List of recipients after alias/virtusertable expansion
   list <string> expandedrcpt;
 
-  // the sendmail queue id for this message; used for logging
-  string queueid;
-
   // Process handling variables
   pid_t pid;
   int pipe_io[2][2];
@@ -181,6 +178,11 @@ struct context
 {
 	char connect_ip[64];	// remote IP address
 	char *helo;
+	char *our_fqdn;
+	char *sender_address;
+	char *queueid;
+	char *auth_authen;
+	char *auth_ssf;
 	SpamAssassin *assassin; // pointer to the SA object if we're processing a message
 };
 

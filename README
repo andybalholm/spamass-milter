@@ -56,15 +56,27 @@ configuring sendmail through m4 & the sendmail.mc files. In this case
 adding the lines
 
 INPUT_MAIL_FILTER(`spamassassin', `S=local:/var/run/sendmail/spamass.sock, F=, T=C:15m;S:4m;R:4m;E:10m')dnl
-define(`confMILTER_MACROS_CONNECT',`t, b, j, _, {daemon_name}, {if_name}, {if_addr}')dnl
-define(`confMILTER_MACROS_HELO',`s, {tls_version}, {cipher}, {cipher_bits}, {cert_subject}, {cert_issuer}')dnl
-define(`confMILTER_MACROS_ENVFROM',`{auth_authen}, {auth_type}')dnl
-define(`confMILTER_MACROS_ENVRCPT',`r, v, Z')dnl
+define(`confMILTER_MACROS_ENVRCPT',confMILTER_MACROS_ENVRCPT`, b, r, v, Z')dnl
+
 
 should do the trick. Of course you need to modify the path of the
 socket if you put another one into the startup script. The timeouts
 have been increased somewhat because SpamAssassin may chew on it for a
 little while on a slow machine.
+
+If you are using multiple milter mail filters on your mail server, you may
+have overridden the default values of some of the confMILTER_MACROS_*
+macros whilst configuring the other filters. You need to ensure that at
+least the following values are present:
+
+confMILTER_MACROS_CONNECT must include the {j} and {_} macros
+(all included by default)
+
+confMILTER_MACROS_ENVFROM must include the {i}, {auth_authen}, {auth_ssf}
+and {auth_type} macros (all included by default)
+
+confMILTER_MACROS_ENVRCPT must include the {b}, {r}, {v}, and {Z} macros
+
 
 Now recreate sendmail.cf, restart sendmail and experiment around a bit
 with the setup to make sure it is working.
