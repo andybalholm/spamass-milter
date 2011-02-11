@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.23 2005/04/07 02:04:24 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.24 2011/02/11 06:01:13 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -186,5 +186,6 @@ int ip_in_networklist(struct in_addr ip, struct networklist *list);
 void parse_debuglevel(char* string);
 char *strlwr(char *str);
 void warnmacro(char *macro, char *scope);
+FILE *popenv(char *const argv[], const char *type, pid_t *pid);
 
 #endif
