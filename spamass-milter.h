@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.24 2011/02/11 06:01:13 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.25 2011/02/14 21:46:13 dnelson Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -99,6 +99,7 @@ public:
   string& spam_checker_version();
   string& spam_level();
   string& content_type();
+  string& mime_version();
   string& subject();
   string& rcpt();		/* first RCPT TO: recipient (raw) */
   string& from();		/* MAIL FROM: sender (raw) */
@@ -115,6 +116,7 @@ public:
   string::size_type set_spam_checker_version(const string&);
   string::size_type set_spam_level(const string&);
   string::size_type set_content_type(const string&);
+  string::size_type set_mime_version(const string&);
   string::size_type set_subject(const string&);
   string::size_type set_rcpt(const string&);
   string::size_type set_from(const string&);
@@ -139,7 +141,8 @@ public:
 
   // Variables for SpamAssassin influenced fields
   string x_spam_status, x_spam_flag, x_spam_report, x_spam_prev_content_type;
-  string x_spam_checker_version, x_spam_level, _content_type, _subject;
+  string x_spam_checker_version, x_spam_level;
+  string _content_type, _subject, _mime_version;
   
   // Envelope info: MAIL FROM:, RCPT TO:, and IP address of remote host
   // _rcpt only holds the first recipient if there are more than one

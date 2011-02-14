@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.92 2011/02/11 06:01:13 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.93 2011/02/14 21:46:13 dnelson Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -127,7 +127,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.92 2011/02/11 06:01:13 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.93 2011/02/14 21:46:13 dnelson Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -518,6 +518,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   // If SpamAssassin thinks it is spam, replace
   //  Subject:
   //  Content-Type:
+  //  MIME-Version:
   //  <Body>
   // 
   //  However, only issue the header replacement calls if the content has
@@ -527,6 +528,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
     {
 	  update_or_insert(assassin, ctx, assassin->subject(), &SpamAssassin::set_subject, "Subject");
 	  update_or_insert(assassin, ctx, assassin->content_type(), &SpamAssassin::set_content_type, "Content-Type");
+	  update_or_insert(assassin, ctx, assassin->mime_version(), &SpamAssassin::set_content_type, "MIME-Version");
 
       // Replace body with the one SpamAssassin provided
       string::size_type body_size = assassin->d().size() - bob;
@@ -719,6 +721,11 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 sfsistat mlfi_helo(SMFICTX * ctx, char * helohost)
 {
 	struct context *sctx = (struct context*)smfi_getpriv(ctx);
+	if (!sctx)
+	{
+		debug(D_ALWAYS, "mlfi_helo: sctx is NULL? - cannot happen");
+		return SMFIS_TEMPFAIL;
+	}
 	if (sctx->helo)
 		free(sctx->helo);
 	sctx->helo = strdup(helohost);
@@ -1040,6 +1047,10 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
   // Content-Type: will be stored if present
   if ( cmp_nocase_partial("Content-Type", headerf) == 0 )
     assassin->set_content_type(headerv);
+
+  // MIME-Version: will be stored if present
+  if ( cmp_nocase_partial("MIME-Version", headerf) == 0 )
+    assassin->set_mime_version(headerv);
 
   // Subject: should be stored
   if ( cmp_nocase_partial("Subject", headerf) == 0 )
@@ -1595,6 +1606,12 @@ SpamAssassin::content_type()
 }
 
 string& 
+SpamAssassin::mime_version()
+{
+  return _mime_version;
+}
+
+string& 
 SpamAssassin::subject()
 {
   return _subject;
@@ -1724,6 +1741,14 @@ string::size_type
 SpamAssassin::set_content_type(const string& val)
 {
   string::size_type old = _content_type.size();
+  _content_type = val;
+  return (old);
+}
+
+string::size_type
+SpamAssassin::set_mime_version(const string& val)
+{
+  string::size_type old = _mime_version.size();
   _content_type = val;
   return (old);
 }

@@ -1,0 +1,1490 @@
+2011-02-11 00:01  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp, spamass-milter.h:
+
+
+	Replace all instances of popen() with a custom function that takes an argv
+	instead of a single string, to avoid a security hole when untrusted user
+	input is used as part of the command.
+
+2006-07-24 14:59  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Add missing ")" after envelope-from and add missing ";" before date in
+	generated Received: header.
+
+	http://savannah.nongnu.org/bugs/?func=detailitem&item_id=17178
+
+2006-04-19 10:40  Dan Nelson <dnelson@allantgroup.com>
+
+	* README:
+
+	add a line for confMILTER_MACROS_ENVRCPT
+
+2006-04-05 10:59  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, configure.in:
+
+	0.3.1
+
+2006-03-23 15:51  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	news update (sa 3.1.1, better Received header)
+
+2006-03-23 15:41  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Spamassassin 3.1.1 now emits headers with CRLF if the incoming message
+	has CRLFs.  Make sure that we strip the CR from wrapped headers when we
+	parse the returned message.
+
+2006-01-23 14:47  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	.deps isn't created since we use no-dependencies
+
+2005-10-06 10:12  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Add /usr/sbin to the list of directories to look for sendmail in, just
+	in case the user doesn't have it in their $PATH.  /usr/lib was the
+	historical location for sendmail, but most systems put the real binary
+	in /usr/sbin now.
+
+2005-08-15 10:10  Dan Nelson <dnelson@allantgroup.com>
+
+	* README:
+
+	Remove references to INSTALL, also mention autogen.sh.
+
+	http://savannah.nongnu.org/bugs/?func=detailitem&item_id=14090
+
+2005-06-02 13:30  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	It turns out that mlfi_close /can/ be called without mlfi_connect, and
+	there is no guarantee that the context has been set.  If it's NULL,
+	just return.
+
+2005-04-06 21:04  Dan Nelson <dnelson@allantgroup.com>
+
+	* README, spamass-milter.cpp, spamass-milter.h:
+
+
+	- Make our fake sendmail Received: header even better.
+
+	- Fix a silly bug in cmp_nocase_partial that made it return true if
+	  either string was a prefix of the other (it should return true only
+	  if s is a prefix of s2).
+
+	Thanks to Yoshitaka Tokugawa.
+
+2005-02-22 10:10  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Change 172.16 to 172.16.0.0 in the usage text.  Partial IP addresses do
+	not parse correctly.
+
+2005-02-05 01:34  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	- new code to upload distfile and sigs to savannah's goofy ftp staging
+	  area
+
+	- add mdoc2man.awk to the distfile
+
+2005-02-05 01:03  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Fix some unused-variable warnings when not on FreeBSD.  The hack will
+	go away in the next release, since the bug has been fixed.
+
+2005-02-04 13:25  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	More automake cleanup cleanup.
+
+2005-02-04 12:55  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, configure.in:
+
+	Version 0.3.0
+
+2004-11-05 10:26  Dan Nelson <dnelson@allantgroup.com>
+
+	* autogen.sh:
+
+	update comment
+
+2004-10-29 10:56  Dan Nelson <dnelson@allantgroup.com>
+
+	* autogen.sh:
+
+	check for automake 1.9
+
+2004-09-23 23:42  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	When reading headers from spamc's output, strip a trailing CR from the
+	line. if it exists.
+
+2004-09-23 15:28  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Unlikely that this is doing any good
+
+2004-09-23 15:27  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	ranges
+
+2004-09-22 11:24  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	more stuff to do
+
+2004-09-21 16:06  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	fix crash on fork failure
+
+2004-09-21 16:04  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Make sure variables are set in the constructor in the same order they
+	appear in the header.
+
+2004-09-21 15:51  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.h:
+
+	Make a note that some variables should be collapsed into one
+
+2004-09-21 15:49  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	If a fork fails at the right time, "running" may be set when pid=-1.
+	This can be very bad when the cleanup routine runs kill(pid, SIGKILL).
+
+2004-09-06 20:19  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_cxx_exceptions.m4, ac_cxx_namespaces.m4,
+	  ac_cxx_verbose_terminate_handler.m4:
+
+	Update ac-archive scripts and add upstream version ids
+
+2004-09-06 20:12  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	note that we support SA 3.0
+
+2004-09-06 20:02  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_acx_pthread.m4:
+
+	Update to v1.10
+
+2004-08-26 13:01  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	When extracting the score, check for "score=###" as well as "hits=###"
+
+2004-07-28 21:15  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	I have no idea how gcc allowed this to compile.
+
+2004-07-16 16:46  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	In local_user, stop at the first "+" or "@", so we can handle
+	user+detail addresses correctly.  Something similar should be done for
+	full_user but that's a bit more complicated.
+
+2004-07-06 12:42  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/spamass-milter-suse.rc:
+
+	Another Linux startup script, this time for SUSE.
+
+2004-07-01 18:02  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	more inline prevention
+
+2004-06-03 21:50  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Don't segfault if we can't fetch the _ and j macros.
+
+2004-05-19 10:00  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Misc C++ cleanups courtesy Jeremy Lin, plus a fix for Linux's ps
+	showing blanks in the arguments to -i and -d.
+
+2004-05-13 16:50  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_pike_compiler_flag.m4, autogen.sh:
+
+	Support automake 1.8
+
+2004-05-13 16:43  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Adjust output of generated Received: header to more closely match
+	sendmail's output.  Spamassassin is very picky about parsing it.  Fixes
+	savannah bug 6970 and patch 3051.
+
+	Also convert all "RCPT TO" commands to X-Envelope-To: headers, not just
+	the first one.  This may have prevented whitelist checks from applying
+	to all recipients.
+
+2004-05-10 13:59  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Don't use asprintf to expand aliases, since we also use 'buf' to read
+	the results of the popen.  Just set a 1024-char buffer, and anyone with
+	an email address longer than that loses.
+
+2004-04-20 10:28  Dan Nelson <dnelson@allantgroup.com>
+
+	* autogen.sh:
+
+	Check for a couple more autoconf versions
+
+	Also set $AUTOM4TE and blow away autom4te* subdirs
+
+2004-03-27 14:05  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	tcp wrappers support
+
+2004-03-18 13:04  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	ipv6
+
+2004-03-18 12:37  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in, spamass-milter.1.in, spamass-milter.cpp,
+	  spamass-milter.h:
+
+	Document -p and -x
+
+	Add the ability to send spam to a spambucket even if -r is set
+
+2004-03-17 18:05  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	typo.
+
+2004-02-24 17:02  Dan Nelson <dnelson@allantgroup.com>
+
+	* autogen.sh:
+
+	Finally figured out why sometimes it would run the wrong auto* tool.
+	You need to set all 4 of these variables before calling any, or they'll
+	use their defaults which may be wrong.
+
+2004-02-21 22:18  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, spamass-milter.cpp:
+
+	arg. why does cvs default to commit on a blank log.
+
+	Put email alias expansion under a flag (-x, defaulted to off).
+
+2004-02-21 22:16  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	[no log message]
+
+2004-02-09 17:03  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/spamass-milter.sh:
+
+	Convert the FreeBSD startup script to rc.subr format.
+
+2004-01-27 13:39  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in, spamass-milter.cpp:
+
+	-e now requires the default domain as a parameter.  Also fix up
+	whitespace and punctuation in the manpage.
+
+2003-10-26 22:00  Dan Nelson <dnelson@allantgroup.com>
+
+	* autogen.sh:
+
+	Force automake to use the version of autoconf that we want.
+
+2003-10-24 12:36  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/spamass-milter.sh:
+
+	update FreeBSD rc script to use the pidfile
+
+2003-10-24 01:55  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_cxx_exceptions.m4, ac_cxx_namespaces.m4,
+	  ac_cxx_verbose_terminate_handler.m4, configure.in,
+	  spamass-milter.cpp:
+
+	Use gcc's verbose exception handler is possible.  If this function is
+	unavailable, C++ will simply abort on any exception.  Ugh.
+
+2003-10-24 01:53  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_pike_compiler_flag.m4:
+
+	Use CPPFLAGS instead of CFLAGS/CXXFLAGS
+
+2003-10-21 16:41  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	update
+
+2003-10-21 16:40  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in, daemon.c, spamass-milter.cpp:
+
+	make -f fully daemonize, and add -P to create a pidfile.
+
+2003-09-12 00:45  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	remove $Revision: 1.6 $
+
+2003-09-12 00:42  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	FreeBSD's libc_r userland threads has a race condition in popen, but I
+	don't know where.  Wrap it in a mutex just to be safe.
+
+2003-09-05 21:38  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	no more spamass-milter.man.in
+
+2003-09-05 21:15  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	no more spamass-milter.man.in
+
+2003-09-05 21:06  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	no more spamass-milter.man
+
+2003-09-05 11:42  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	Distribute mdoc2man.awk, and let systems without mdoc functionality
+	convert the manpage themselves.
+
+2003-09-05 11:33  Dan Nelson <dnelson@allantgroup.com>
+
+	* mdoc2man.awk:
+
+
+	Yay!  Peter Stuge decided on a license, so bring this back into CVS.
+
+2003-09-02 23:53  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Oops.  Forgot to strip the domain part in local_user when there are no brackets.
+
+2003-08-29 11:01  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_pike_compiler_flag.m4, configure.in:
+
+	Pull in another autoconf test from Pike, which lets us test for
+	compiler flags.  Add -fno-default-inline if possible, which disables
+	inlining of functions in classes.  gdb does not process them correctly,
+	making debugging a pain.
+
+2003-08-29 11:00  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Redirect stderr to stdout when running sendmail -bv; otherwise we lose
+	anything sent to stderr
+
+2003-08-28 09:59  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO, spamass-milter.1.in, spamass-milter.cpp, spamass-milter.h:
+
+	Add -e flag to pass full email address to spamc
+
+	Run all recipients through sendmail -bv (this may end up behind a
+	commandline switch, but it's low-overhead so probably not).
+
+2003-08-12 22:47  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in, spamass-milter.cpp, spamass-milter.h:
+
+	- add printf style checking to debug() on systems that support it
+	- search for sendmail instead of relying on paths.h which may not exist
+
+2003-08-12 22:33  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_acx_pthread.m4:
+
+	Bump original version to 1.8, since the originating webpage apparently
+	did.  There are absolutely no changes other than the version number.
+
+2003-08-11 17:12  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	move newrecipients out of the inner loop
+
+2003-08-11 16:36  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in, spamass-milter.1.in, spamass-milter.cpp,
+	  spamass-milter.h:
+
+	Preliminary work to support alias/virtusertable expansion.
+	sendmail -bv is called and its output is parsed, but all we do is log it
+	so far.
+
+2003-08-05 23:45  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Fix two cases where we caught an error but didn't clean up the assassin
+	object.
+
+2003-08-05 23:29  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	- Correctly exit if we can't exec spamc
+	- Check our polled fds for errors - prevents us from spinning if
+	  something happens to spamc
+
+2003-08-04 23:13  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	document crash on empty body fix
+
+2003-08-04 18:03  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	Distribute subst_poll.h
+
+2003-07-31 17:35  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	We still need to call update_or_insert for headers if -M is set, so we
+	can cache the header value.  Just don't call the milter update
+	functions.
+
+2003-07-31 14:13  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, spamass-milter.1.in, spamass-milter.cpp:
+
+	New -M flag that disables all body/header changes.  With this flag, the
+	milter is transparent to the message stream.
+
+2003-07-21 20:10  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	POSIX says strcasecmp requires strings.h
+
+2003-07-16 21:28  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	If there is no body, set bob to point to the end of the string returned
+	by spamassassin instead of string::npos.
+
+2003-07-09 12:58  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	[no log message]
+
+2003-07-07 14:46  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Added func logging for two returns in ::output and ::input
+
+2003-07-07 14:44  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Add func debug logging for mlfi_envrcpt
+
+2003-07-07 14:39  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	shortcut ip_in_networklist if the list is empty.
+
+2003-07-07 13:45  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	[no log message]
+
+2003-07-02 17:28  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	things to do
+
+2003-06-30 15:24  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Small workaround for people trying to configure from CVS.  Create a
+	blank spamass-milter.man.in if it doesn't already exist.
+
+2003-06-30 15:23  Dan Nelson <dnelson@allantgroup.com>
+
+	* autogen.sh:
+
+	spell automake with a lowercase a
+
+2003-06-26 22:24  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/spamass-milter.spec.in:
+
+	We don't have these two files.
+
+2003-06-26 17:13  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, configure.in:
+
+	Now at 0.2.0+cvs
+
+2003-06-26 16:57  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, configure.in:
+
+	Version 0.2.0
+
+2003-06-26 10:10  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	typo
+
+2003-06-26 09:45  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	NULL hostaddr is actually a common occurance; running sendmail on the
+	local host does this.  Map NULL to 127.0.0.1 so it's treated just like
+	a connection to localhost port 25.
+
+2003-06-25 11:17  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, spamass-milter.1.in, spamass-milter.cpp:
+
+	Document -B, and sort -h output
+
+2003-06-25 10:17  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am, configure.in, mdoc2man.awk:
+
+	I haven't gotten a license from the author of mdoc2man.awk, so remove
+	it and, distribute a preproccesed .man.in for systems without mdoc
+	macros instead.
+
+2003-06-25 10:15  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Check for a NULL hostaddr in mlfi_connect.  It should never happen, so
+	emit a warning in the log when it does.
+
+2003-06-18 18:13  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_dmalloc.m4, configure.in, spamass-milter.cpp:
+
+	- Use my own dmalloc check, since AM_WITH_DMALLOC only works for
+	  nonthreaded C programs.
+
+	- Some systems provide strsep() but no prototype.  Check for that.
+
+2003-06-18 13:57  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_pike_paths.m4, configure.in:
+
+	- Add a --with-dmalloc option
+
+	- Search some common directories for includes and libraries, to find
+	  dmalloc or user-compiled sendmail libs.
+
+2003-06-16 14:59  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	[no log message]
+
+2003-06-14 14:17  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.h:
+
+	Move the launch of spamc from mlfi_envrcpt back to mlfi_header where it
+	was before rev 1.38.  This should fix reports of "spamd: bad protocol"
+	errors being logged when we kill spamc without sending any data.
+
+2003-06-14 14:01  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Move the launch of spamc from mlfi_envrcpt back to mlfi_header where it
+	was before rev 1.38.  This should fix reports of "spamd: bad protocol"
+	errors being logged when we kill spamc without sending any data.
+
+2003-06-12 21:39  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	Add an "upload" makefile target that pushes tarballs to savannah
+
+2003-06-12 17:41  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am, spamass-milter.cpp, spamass-milter.h:
+
+	Lowercase the username when using -u; email addresses are
+	case-insensitive, but userids are usually all-lowercase and
+	case-sensitive.
+
+2003-06-11 15:18  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	update
+
+2003-06-11 15:17  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp, spamass-milter.h:
+
+	* Even better sendmail-style Received: header generation.  Pass SA the
+	  value of the HELO command.  This lets rules like FORGED_HOTMAIL work.
+
+	* Beginnings of a better debug logline.  Remember the sendmail queue ID.
+	  Not sure of the best way to pass it to the debug() function though.
+
+2003-06-10 13:42  Dan Nelson <dnelson@allantgroup.com>
+
+	* README:
+
+	Remove some of the disclaimers; it's pretty stable now.
+
+2003-06-10 00:52  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	Tell automake we would like a bzip2 tarball also
+
+2003-06-10 00:02  Dan Nelson <dnelson@allantgroup.com>
+
+	* strsep.c:
+
+	really add Id
+
+2003-06-10 00:02  Dan Nelson <dnelson@allantgroup.com>
+
+	* strsep.c:
+
+	add Id
+
+2003-06-09 23:57  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in, spamass-milter.cpp, strsep.c:
+
+	provide a strsep() for systems without one
+
+2003-06-09 23:47  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	printf->fprintf
+
+2003-06-09 22:03  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO, spamass-milter.cpp:
+
+	New flag -B.  Just like -b, but the original recipient gets the spam too.
+
+2003-06-09 16:24  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	Just realized you can redirect to /dev/null to silently drop spam
+
+2003-06-09 15:27  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	alias expansion?
+
+2003-06-09 12:19  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, spamass-milter.1.in, spamass-milter.cpp, spamass-milter.h:
+
+	Add spambucket support.  "-b otheraddress" will redirect all tagged
+	spam to that address.  Original recipients get put into X-Spam-Orig-To:
+	headers.
+
+2003-06-09 12:16  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in:
+
+	mdoc cleanup
+
+2003-06-09 10:57  Dan Nelson <dnelson@allantgroup.com>
+
+	* poll.c:
+
+	Oops.  forgot to include config.h
+
+2003-06-07 14:50  Dan Nelson <dnelson@allantgroup.com>
+
+	* TODO:
+
+	scratchpad so I don't forget things
+
+2003-06-07 14:43  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_vl_prog_cc_warnings.m4, configure.in:
+
+	Use VL_PROG_CC_WARNINGS to add compiler-appropriate warnings flags
+
+2003-06-07 14:16  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp, spamass-milter.h:
+
+	Instead of playing musical chairs with our private context pointer,
+	create a single structure that holds both the remote IP address and the
+	pointer to our assassin object.
+
+2003-06-06 21:56  Dan Nelson <dnelson@allantgroup.com>
+
+	* ac_acx_pthread.m4, ac_cf_gnu_source.m4, acinclude.m4, autogen.sh:
+
+	Split 3rd-party autoconf macros out into their own files
+
+2003-06-06 16:04  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	Summarize the last few days worth of commits
+
+2003-06-06 15:48  Dan Nelson <dnelson@allantgroup.com>
+
+	* README, spamass-milter.cpp:
+
+	Generate a better dummy Received: header.  If the admin has added the
+	"b" macro (rfc822 date) to the milter's list of visible macros, pass
+	that to spamc.  This allows SA to do Date: header validation if there
+	are no other Received: headers in the message.
+
+	Also update README to include the sendmail.mc line required to enable "b".
+
+2003-06-06 11:37  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp, spamass-milter.h:
+
+
+	Remember the envelope sender and recipient, remember the connecting IP,
+	and insert appropriate headers at the top of the message we send to
+	spamc, so that Spamassassin can use them.
+
+	The envelope info gets put into X-Envelope-From: and X-Envelope-To: ,
+	which SA will use when checking the whitelist_to and _from rules.
+
+	The connecting IP gets put into a dummy "Received: [111.222.333.444]"
+	header.  Without it, none of the DNSBL or whitelist checks will see
+	this IP.  The dummy header does not seem to trigger any "forged
+	Received:" rules, so that's good.
+
+	Note that remembering the connecting IP address means we need to carry
+	information between the lifetimes of SpamAssassin objects, so we have
+	to use the milter private data pointer.  This means that within a
+	message, the pointer points to a SpamAssassin object.  Outside of a
+	message but during a client connection, the pointer points to a struct
+	connect_info.  This means some extra work in the message error path to
+	recover the connect_info pointer.  It also means that for symmetry, we
+	have to create the SpamAssassin object at the beginning on a "message"
+	session - i.e. within mlfi_envrcpt instead of mlfi_header.
+
+	Also for ease of coding add some more output methods with string and
+	unsized void* arguments.
+
+2003-06-06 11:22  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Commit Waider's updated retrieve_field function that I forgot about.
+	This fixes a bug where the milter fails to retrieve the SA score from a
+	message with absolutely no headers.   The old code could not retrieve the
+	first header in a message, and if there are no headers in the original
+	message, the X-Spam-Status header ends up being the first.
+
+2003-06-06 11:16  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	RFC822 says the blank line between header and body is \r\n.
+	Spamassassin doesn't seem to care but it's wrong anyway :)
+
+2003-06-06 11:10  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Clean up some debugging messages
+
+2003-06-06 11:05  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in, spamass-milter.cpp, spamass-milter.h:
+
+	Convert the debug levels into flags, so it's easier to enable debugging
+	for a single subsystem.  The old numbers are still supported.
+
+2003-06-06 10:43  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Cleanup commit.  You don't need a semicolon after a function body, and
+	Intel's compiler warns about them.
+
+2003-06-06 10:34  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	explicitly make spamass-milter.cpp depend on spamass-milter.h
+
+2003-06-05 16:18  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	reword -i description so it says skip checks instead of skip the
+	mail itself
+
+2003-06-04 14:41  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	I thought I cut'n'pasted this right, but I didn't.  Allocate the
+	right number of bytes for the internalnets array when resizing.
+
+2003-06-03 02:20  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, spamass-milter.1.in:
+
+	update NEWS, adjust description of -i
+
+2003-06-03 01:36  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp, spamass-milter.h:
+
+	gcc 2.95 apparently can't handle the case where a struct and an element
+	have the same name.
+
+2003-06-03 01:24  Dan Nelson <dnelson@allantgroup.com>
+
+	* AUTHORS, spamass-milter.1.in, spamass-milter.cpp,
+	  spamass-milter.h:
+
+	Add -i to list netblocks to ignore (argument is a comma-delimited list
+	of ip addresses, ip/netmask, or ip/bits).
+
+	Remember arguments after --, and pass them to spamc.  This makes the -D
+	flag redundant, and lets you change the port number, enable SSL mode,
+	etc.
+
+2003-06-02 21:09  Dan Nelson <dnelson@allantgroup.com>
+
+	* mdoc2man.awk:
+
+	If the server cannot process mdoc macros, use mdoc2man to generate a
+	manpage with man macros instead.
+
+2003-06-02 21:08  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am, configure.in, spamass-milter.cpp:
+
+
+	If the server cannot process mdoc macros, use mdoc2man to generate a
+	manpage with man macros instead.
+
+2003-03-10 21:40  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in, poll.c:
+
+	add some more headers to pooll.c, and allow the user to force poll
+	emulation, for testing.
+
+2003-03-10 17:42  Dan Nelson <dnelson@allantgroup.com>
+
+	* autogen.sh:
+
+	expand check to search for automake as well, check for more versions
+
+2003-03-06 23:11  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Oops.  Forgot to enable the poll.h test.
+
+2003-03-06 22:33  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in, spamass-milter.cpp:
+
+	Use 'defaultuser' instead of 'user' as an example when talking about
+	the argument to the -u flag.
+
+2003-03-06 22:26  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in:
+
+	Document the -D host flag.
+
+2003-03-06 15:50  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	I keep forgetting to bump the version number before and after a
+	release.  We are now at 0.1.3a+cvs
+
+2003-03-06 15:40  Dan Nelson <dnelson@allantgroup.com>
+
+	* poll.c, subst_poll.h:
+
+
+	Add Ids, also record that fact that this function was lifted from
+	the "wy60" terminal emulator software by Markus Gutschke.
+
+2003-03-06 15:37  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am, configure.in, poll.c, spamass-milter.cpp,
+	  subst_poll.h:
+
+
+	Provide a substitute poll() function for systems that are missing it.
+
+2003-03-06 15:33  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp, AUTHORS, contrib/spamass-milter-redhat.rc:
+
+
+	. Add the ability to connect to a spamd on another server (-D host)
+
+	. Change the redhat rc script's path to match where an RPM would put
+	  spamass-milter
+
+2003-01-21 14:44  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	(forced commit due to empty log message)
+
+	Fix "-u" to actually pass its argument to spamc instead of hardcoding
+	"_multi_".
+
+2003-01-21 14:42  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	[no log message]
+
+2003-01-17 14:53  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/spamass-milter-redhat.rc:
+
+	Config files are sourced and do not require the execute bit set, so
+	just test to see if the file exists.
+
+2002-12-31 14:17  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS, configure.in:
+
+	Version 0.1.3a
+
+2002-12-31 14:03  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Add a call to fork spamc after header processing, as a fallback case
+	for when no headers are sent at all.
+
+2002-12-31 13:34  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	add a big more debugging to the poll loop
+
+2002-12-27 16:32  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Version is now 0.1.3+cvs
+
+2002-12-27 15:53  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Change version to 0.1.3
+
+2002-12-27 15:52  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	Add Id
+
+2002-12-27 15:50  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	News for 0.1.3
+
+2002-12-27 15:38  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	Add FreeBSD rc script
+
+2002-12-27 15:36  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/spamass-milter.sh:
+
+	add Id
+
+2002-12-27 15:35  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/spamass-milter.sh:
+
+	Add a FreeBSD startup script
+
+2002-12-23 11:08  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in, spamass-milter.cpp, spamass-milter.h:
+
+	Add -u option to pass the username to spamc.  Without -u behaviour
+	should be unchanged.
+
+2002-12-21 12:20  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Check for an empty header
+
+2002-12-21 12:18  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in:
+
+	document debug level 3
+
+2002-11-17 17:01  Dan Nelson <dnelson@allantgroup.com>
+
+	* AUTHORS:
+
+	Update list of patch submitters
+
+2002-11-17 16:57  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in, spamass-milter.cpp, spamass-milter.h:
+
+	Add -r flag, which allows you to have sendmail reject the message if SA
+	tags it as spam, or if it exceeds a given score.
+
+	Closes patches 440 and 441, submitted by Patrick Monnerat <pm@datasphere.ch>
+
+2002-11-15 17:22  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in, spamass-milter.cpp:
+
+	Add -m option, which disables body, Subject:, and Content-Type: header
+	modification.  Closes patch 385.
+
+2002-11-15 15:54  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Revert the spamc check back to the way it was (find absolute path of
+	spamc).  We'll do "spamc with arguments" testing later, when the milter
+	can actaully handle it.
+
+2002-11-15 01:18  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am:
+
+	Switch from --fsf to --no-wrap, which is really what I wanted in the
+	first place.
+
+2002-11-15 01:17  Dan Nelson <dnelson@allantgroup.com>
+
+	* autogen.sh:
+
+
+	Try really hard to run a new-ish version of autoconf.  This should make
+	rhautogen.sh obsolete.
+
+2002-11-15 01:04  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp, spamass-milter.h:
+
+
+	- Factor out all the header-changing code into a single
+	  update_or_insert function.  This greatly simplifies the whole
+	  program, finally making it insert/change/leave correctly for all the
+	  headers it touches.
+
+	- Fix mlfi_header to actually suppress incoming SA headers like it's
+	  supposed to.  This fixes a bug where an incoming SA header with the
+	  wrong case would end up overriding the header our SA tries to add.
+
+	- Declare a temporary string variable to hold the body text before we
+	  call smfi_replacebody.  Trying to do stringvar.substr(x,x).c_str()
+	  simply will not work.  substr() creates a temporary string object,
+	  c_str() dutifully returns a pointer to it, and when the destructor
+	  for the temp string frees the memory, the data the pointer points to
+	  gets blown away.  This fixes a longstanding bug where tagged emails
+	  would have their message body completely overwritten with x00 or xD0
+	  on OSes that ensure that free'd memory is blanked.
+
+	- C++ should be strangled, then shot, then burned, and the ashes set
+	  into a cement block and dumped into the ocean.  This should be
+	  obvious.
+
+2002-11-14 21:23  Dan Nelson <dnelson@allantgroup.com>
+
+	* acinclude.m4:
+
+	Update acx_pthread; Tru64 and HP-UX compatibility, and make sure the tests are run under C
+
+2002-11-14 21:22  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Only add /usr/lib/libmilter as a library path if the directory exists
+
+2002-09-23 00:39  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Previous commit should read
+
+	AC_CHECK_PROG doesn't work; AC_CHECK_PROGS does.
+
+2002-09-23 00:39  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	AC_CHECK_PROG doesn't work; AC_CHECK_PROG does.
+
+2002-09-20 16:15  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+
+	Allow the user to specify spamc arguments during configure
+
+2002-09-18 12:17  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am, configure.in:
+
+
+	Change version number to reflace that there are post-release changes.
+
+	Change how the ChangeLog is created for the distribution file, so we
+	don't get a 0-byte ChangeLog.bak in the .tar.gz.
+
+2002-08-28 11:54  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Add Id variable to store CVS version in the binary
+
+2002-08-23 11:59  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Fix bug that caused doubling of Content-Type: on spam emails.
+
+2002-08-19 15:39  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/: spamass-milter-redhat.rc, spamass-milter.spec.in:
+
+	* Patches from Fritz Elfert <fritz.elfert@to.com>
+	  - Use RPM macros everywhere (this fixes install of manpage)
+	  - Changed Group to an official group of RedHat
+	  - Added preun and post scriptlets
+	  - Made clean scriptlet foolproof
+	  - Added condrestart to redhat rc script
+
+2002-08-18 16:38  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	Fix typo
+
+2002-08-18 16:13  Dan Nelson <dnelson@allantgroup.com>
+
+	* NEWS:
+
+	News for 0.1.2
+
+2002-08-18 16:13  Dan Nelson <dnelson@allantgroup.com>
+
+	* AUTHORS:
+
+	Update with my name, and add Waider
+
+2002-08-18 15:53  Dan Nelson <dnelson@allantgroup.com>
+
+	* ChangeLog, Makefile.am:
+
+	More cleanup for the distribution.
+
+	- Zero out ChangeLog, as it is now autogenerated by "make dist".  You
+	  can manually generate one with "make changelog", but your tree must
+	  have been checked out with CVS for it to work (i.e. the dist tarball
+	  won't work, but then again it will ship with a matching ChangeLog, so
+	  who cares)
+
+	- Add some more files to maintainer-clean-local: and distclean-local:
+	  targets, as the autoconf/make people can't seem to keep track of what
+	  files their own tools generate.
+
+2002-08-18 15:44  Dan Nelson <dnelson@allantgroup.com>
+
+	* contrib/users:
+
+	List of committer IDs and names, for use by cvs2cl
+
+2002-08-17 22:09  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.1.in:
+
+	Remove some extra comments
+
+2002-08-14 11:15  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+
+	Fix swapped variables names preventing subject and content-type from
+	being updated (from Lance A. Brown)
+
+2002-07-25 23:32  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am, configure.in, spamass-milter.1.in:
+
+	Minimal manpage.
+
+2002-07-24 11:19  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am, autogen.sh, configure.in, rhautogen.sh,
+	  contrib/spamass-milter, contrib/spamass-milter-redhat.rc,
+	  contrib/spamass-milter.spec.in:
+
+
+	- Add RedHat .spec and .rc files
+
+	- Add contrib/ files to the distfile
+
+2002-07-22 22:48  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+	Forgot to mention; the previous commit was patch 354
+
+2002-07-22 22:47  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+
+	Only replace Subject: and Content-Type: headers if they change
+
+2002-07-22 22:46  Dan Nelson <dnelson@allantgroup.com>
+
+	* configure.in:
+
+	Make failure to find milter library fatal
+
+2002-07-22 22:34  Dan Nelson <dnelson@allantgroup.com>
+
+	* spamass-milter.cpp:
+
+
+	Patch 341
+
+	- Fix typo affecting the case of incoming spam with no subject
+
+2002-07-22 21:05  Dan Nelson <dnelson@allantgroup.com>
+
+	* acinclude.m4:
+
+	Fix an accidentally spammed embedded Id
+
+2002-07-22 21:02  Dan Nelson <dnelson@allantgroup.com>
+
+	* Makefile.am, acconfig.h, acinclude.m4, autogen.sh, configure.in,
+	  spamass-milter.cpp, spamass-milter.h:
+
+
+	- Update to autoconf 2.53
+	- Use ACX_PTHREAD for more portable threads detection
+	- Only -lmilter is required; search for -lsm or -lsmutil when -lmilter fails,
+	  for compatibility with older sendmails
+	- Only mfapi.h is required
+	- add net library checks for Solaris
+	- Reorder entries in autogen.sh
+	- Move struct declarations into headers, and variable definitions into
+	  source.
+	- add -d debug flag
+	- fix incorrect use of LOG_ macros
+	- use poll when feeding data to spamc to avoid the 250k deadlock
+	- compiles with gcc 3.1
+
+2002-04-27 12:14  Georg C. F. Greve  <greve@gnu.org>
+
+	* contrib/spamass-milter:
+
+	adopted for commandline-parameter change
+
+2002-04-27 12:05  Georg C. F. Greve  <greve@gnu.org>
+
+	* ChangeLog, spamass-milter.cpp, spamass-milter.h:
+
+	Added support for 'X-Spam-Level' Flag introduced with version 2.20 of SpamAssassin
+
+2002-03-27 09:56  Michael Brown <michael@supermathie.net>
+
+	* spamass-milter.cpp:
+
+	Added a -f option that makes spamass-milter fork into the background
+	spamass-milt now removes the socket if it already exists.
+
+2002-03-06 07:07  Georg C. F. Greve  <greve@gnu.org>
+
+	* AUTHORS, ChangeLog, NEWS, configure.in, spamass-milter.cpp,
+	  spamass-milter.h, contrib/spamass-milter:
+
+	Applied some patches. Rights assigned to FSF Europe. Appointed Michael as maintainer.
+
+2002-02-26 06:55  Georg C. F. Greve  <greve@gnu.org>
+
+	* contrib/spamass-milter:
+
+	seems I forgot to commit it last time. *sigh*
+
+2002-01-31 09:56  Georg C. F. Greve  <greve@gnu.org>
+
+	* NEWS:
+
+	News for 0.1.1
+
+2002-01-31 09:34  Georg C. F. Greve  <greve@gnu.org>
+
+	* spamass-milter.cpp:
+
+	fixed some typing bugs... :-)
+
+2002-01-31 09:28  Georg C. F. Greve  <greve@gnu.org>
+
+	* spamass-milter.cpp, spamass-milter.h, ChangeLog, configure.in:
+
+	* Update for Version 2.0+ of SpamAssassin
+	* Only modify mail *not* rated Spam before, leave marked Spam untouched
+
+2002-01-16 16:24  Georg C. F. Greve  <greve@gnu.org>
+
+	* spamass-milter.cpp:
+
+	output package name & version with usage
+
+2002-01-16 16:19  Georg C. F. Greve  <greve@gnu.org>
+
+	* spamass-milter.cpp:
+
+	now using SPAMC variable determined in configure
+
+2002-01-16 16:16  Georg C. F. Greve  <greve@gnu.org>
+
+	* contrib/README.gnus:
+
+	This might be useful to other gnus users.
+
+2002-01-16 16:10  Georg C. F. Greve  <greve@gnu.org>
+
+	* README:
+
+	A small README to have minimal documentation
+
+2002-01-16 15:41  Georg C. F. Greve  <greve@gnu.org>
+
+	* Makefile.am, acconfig.h, configure.in:
+
+	Autoconf should work now
+
+2002-01-16 14:30  Georg C. F. Greve  <greve@gnu.org>
+
+	* acconfig.h, config.h.in, AUTHORS, NEWS, README:
+
+	autoconf setup still needs polishing
+
+2002-01-16 14:26  Georg C. F. Greve  <greve@gnu.org>
+
+	* ChangeLog, Makefile.am, autogen.sh, configure.in, config.h.in:
+
+	autoconf setup still needs polishing
+
+2002-01-16 03:41  Georg C. F. Greve  <greve@gnu.org>
+
+	* spamass-milter.cpp, spamass-milter.h:
+
+	Source Base
+
