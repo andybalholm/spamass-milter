@@ -1,4 +1,7 @@
-$Id: NEWS,v 1.25 2006/04/05 15:59:18 dnelson Exp $
+$Id: NEWS,v 1.26 2011/02/14 21:31:30 dnelson Exp $
+
+0.3.2: (2011-02-10)
+ * Fix security vulnerability with the -x option
 
 0.3.1: (2006-03-23)
  * Ensure wrapped headers always use LF (fix for spamassassin 3.1.1)
