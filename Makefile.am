@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.23 2011/02/14 21:46:13 dnelson Exp $
+## $Id: Makefile.am,v 1.24 2011/02/14 21:56:15 dnelson Exp $
 
 AUTOMAKE_OPTIONS = no-dependencies foreign dist-bzip2
 
@@ -38,7 +38,7 @@ sign: dist-all
 	done
 
 upload: dist-all sign
-	rsync -a --progress ${DIST_ARCHIVES} dl.sv.nongnu.org:/releases/spamass-milt/
+	rsync -a --progress ${DIST_ARCHIVES} ${DIST_ARCHIVE_SIGS} dl.sv.nongnu.org:/releases/spamass-milt/
 
 # ftp got disabled at some point?
 #upload: dist-all sign
