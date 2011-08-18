@@ -1069,9 +1069,14 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 
 		rec_header = (string) "Received: from " + macro_s + " (" + macro__ + ")\r\n\t";
 
-		if (strlen(macro_auth_ssf))
+		if (strlen(macro_auth_authen))
 		{
-			rec_header += (string) "(authenticated bits=" + macro_auth_ssf + ")\r\n\t";
+			rec_header += (string) "(authenticated";
+			if (strlen(macro_auth_ssf))
+			{
+				rec_header += (string) " bits=" + macro_auth_ssf;
+			}
+			rec_header += (string) ")\r\n\t";
 		}
 
 		rec_header += (string) "by " + macro_j + " (" + macro_v + "/" + macro_Z + ") with " +
