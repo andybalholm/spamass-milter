@@ -1,6 +1,6 @@
 //-*-c++-*-
 //
-//  $Id: spamass-milter.h,v 1.26 2011/02/14 21:50:06 dnelson Exp $
+//  $Id: spamass-milter.h,v 1.27 2014/08/14 03:36:21 kovert Exp $
 //
 //  Main include file for SpamAss-Milter
 //
@@ -56,16 +56,30 @@ sfsistat mlfi_abort(SMFICTX*);
 extern struct smfiDesc smfilter;
 
 /* struct describing a single network */
-struct net
+union net
 {
-	struct in_addr network;
-	struct in_addr netmask;
+	struct
+	{
+		uint8_t af;
+	} net;
+	struct
+	{
+		uint8_t af;
+		struct in_addr network;
+		struct in_addr netmask;
+	} net4;
+	struct
+	{
+		uint8_t af;
+		struct in6_addr network;
+		int netmask; /* Just the number of bits for IPv6 */
+	} net6;
 };
 
 /* an array of networks */
 struct networklist
 {
-	struct net *nets;
+	union net *nets;
 	int num_nets;
 };
 
@@ -165,7 +179,7 @@ public:
 /* Private data structure to carry per-client data between calls */
 struct context
 {
-	struct in_addr connect_ip;	// remote IP address
+	char connect_ip[64];	// remote IP address
 	char *helo;
 	SpamAssassin *assassin; // pointer to the SA object if we're processing a message
 };
@@ -182,7 +196,7 @@ string::size_type find_nocase(const string&, const string&, string::size_type = 
 int cmp_nocase_partial(const string&, const string&);
 void closeall(int fd);
 void parse_networklist(char *string, struct networklist *list);
-int ip_in_networklist(struct in_addr ip, struct networklist *list);
+int ip_in_networklist(struct sockaddr *addr, struct networklist *list);
 void parse_debuglevel(char* string);
 char *strlwr(char *str);
 void warnmacro(char *macro, char *scope);

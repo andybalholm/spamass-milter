@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.94 2011/02/14 21:50:53 dnelson Exp $
+//  $Id: spamass-milter.cpp,v 1.95 2014/08/14 03:36:20 kovert Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -88,6 +88,7 @@
 #include "subst_poll.h"
 #endif
 #include <errno.h>
+#include <netdb.h>
 
 // C++ includes
 #include <cstdio>
@@ -127,7 +128,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.94 2011/02/14 21:50:53 dnelson Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.95 2014/08/14 03:36:20 kovert Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -678,12 +679,19 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 	sctx = (struct context *)malloc(sizeof(*sctx));
 	if (!hostaddr)
 	{
+		static struct sockaddr_in localhost;
+		
 		/* not a socket; probably a local user calling sendmail directly */
 		/* set to 127.0.0.1 */
-		sctx->connect_ip.s_addr = htonl(INADDR_LOOPBACK);
+		strcpy(sctx->connect_ip, "127.0.0.1");
+		localhost.sin_family = AF_INET;
+		localhost.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+		hostaddr = (struct sockaddr*) &localhost;
 	} else
 	{
-		sctx->connect_ip = ((struct sockaddr_in *) hostaddr)->sin_addr;
+		getnameinfo(hostaddr, sizeof(struct sockaddr_in6),
+		            sctx->connect_ip, 63, NULL, 0, NI_NUMERICHOST);
+		debug(D_FUNC, "Remote address: %s", sctx->connect_ip);
 	}
 	sctx->assassin = NULL;
 	sctx->helo = NULL;
@@ -697,10 +705,12 @@ mlfi_connect(SMFICTX * ctx, char *hostname, _SOCK_ADDR * hostaddr)
 	}
 	/* debug(D_ALWAYS, "ZZZ set private context to %p", sctx); */
 
-	if (ip_in_networklist(sctx->connect_ip, &ignorenets))
+	//debug(D_FUNC, "sctx->connect_ip: `%d'", sctx->connect_ip.sin_family);
+
+	if (ip_in_networklist(hostaddr, &ignorenets))
 	{
 		debug(D_NET, "%s is in our ignore list - accepting message",
-		    inet_ntoa(sctx->connect_ip));
+		      sctx->connect_ip);
 		debug(D_FUNC, "mlfi_connect: exit ignore");
 		return SMFIS_ACCEPT;
 	}
@@ -756,7 +766,7 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
       return SMFIS_TEMPFAIL;
     };
   
-  assassin->set_connectip(string(inet_ntoa(sctx->connect_ip)));
+  assassin->set_connectip(string(sctx->connect_ip));
 
   // Store a pointer to the assassin object in our context struct
   sctx->assassin = assassin;
@@ -2010,69 +2020,119 @@ void parse_networklist(char *string, struct networklist *list)
 	{
 		char *tnet = strsep(&token, "/");
 		char *tmask = token;
-		struct in_addr net, mask;
+		struct in_addr net;
+		struct in6_addr net6;
 
 		if (list->num_nets % 10 == 0)
-			list->nets = (struct net*)realloc(list->nets, sizeof(*list->nets) * (list->num_nets + 10));
+			list->nets = (union net*)realloc(list->nets, sizeof(*list->nets) * (list->num_nets + 10));
 
-		if (!inet_aton(tnet, &net))
+		if (inet_pton(AF_INET, tnet, &net))
+		{
+			struct in_addr mask;
+			
+			if (tmask)
+			{
+				if (strchr(tmask, '.') == NULL)
+				{
+					/* CIDR */
+					unsigned int bits;
+					int ret;
+					ret = sscanf(tmask, "%u", &bits);
+					if (ret != 1 || bits > 32)
+					{
+						fprintf(stderr,"%s: bad CIDR value", tmask);
+						exit(1);
+					}
+					mask.s_addr = htonl(~((1L << (32 - bits)) - 1) & 0xffffffff);
+				} else if (!inet_pton(AF_INET6, tmask, &mask))
+				{
+					fprintf(stderr, "Could not parse \"%s\" as a netmask\n", tmask);
+					exit(1);
+				}
+			} else
+				mask.s_addr = 0xffffffff;
+
+			{
+				char *snet = strdup(inet_ntoa(net));
+				debug(D_MISC, "Adding %s/%s to network list", snet, inet_ntoa(mask));
+				free(snet);
+			}
+
+			net.s_addr = net.s_addr & mask.s_addr;
+			list->nets[list->num_nets].net4.af = AF_INET;
+			list->nets[list->num_nets].net4.network = net;
+			list->nets[list->num_nets].net4.netmask = mask;
+			list->num_nets++;
+		} else if (inet_pton(AF_INET6, tnet, &net6))
+		{
+			int mask;
+			
+			if (tmask)
+			{
+				if (sscanf(tmask, "%d", &mask) != 1 || mask > 128)
+				{
+					fprintf(stderr,"%s: bad CIDR value", tmask);
+					exit(1);
+				}
+			} else
+				mask = 128;
+			
+			list->nets[list->num_nets].net6.af = AF_INET6;
+			list->nets[list->num_nets].net6.network = net6;
+			list->nets[list->num_nets].net6.netmask = mask;
+			list->num_nets++;
+		} else
 		{
 			fprintf(stderr, "Could not parse \"%s\" as a network\n", tnet);
 			exit(1);
 		}
 
-		if (tmask)
-		{
-			if (strchr(tmask, '.') == NULL)
-			{
-				/* CIDR */
-				unsigned int bits;
-				int ret;
-				ret = sscanf(tmask, "%u", &bits);
-				if (ret != 1 || bits > 32)
-				{
-					fprintf(stderr,"%s: bad CIDR value", tmask);
-					exit(1);
-				}
-				mask.s_addr = htonl(~((1L << (32 - bits)) - 1) & 0xffffffff);
-			} else if (!inet_aton(tmask, &mask))
-			{
-				fprintf(stderr, "Could not parse \"%s\" as a netmask\n", tmask);
-				exit(1);
-			}
-		} else
-			mask.s_addr = 0xffffffff;
-
-		{
-			char *snet = strdup(inet_ntoa(net));
-			debug(D_MISC, "Adding %s/%s to network list", snet, inet_ntoa(mask));
-			free(snet);
-		}
-
-		net.s_addr = net.s_addr & mask.s_addr;
-		list->nets[list->num_nets].network = net;
-		list->nets[list->num_nets].netmask = mask;
-		list->num_nets++;
 	}
 	free(string);
 }
 
-int ip_in_networklist(struct in_addr ip, struct networklist *list)
+int ip_in_networklist(struct sockaddr *addr, struct networklist *list)
 {
 	int i;
 
 	if (list->num_nets == 0)
 		return 0;
-		
-	debug(D_NET, "Checking %s against:", inet_ntoa(ip));
+	
+	//debug(D_NET, "Checking %s against:", inet_ntoa(ip));
 	for (i = 0; i < list->num_nets; i++)
 	{
-		debug(D_NET, "%s", inet_ntoa(list->nets[i].network));
-		debug(D_NET, "/%s", inet_ntoa(list->nets[i].netmask));
-		if ((ip.s_addr & list->nets[i].netmask.s_addr) == list->nets[i].network.s_addr)
-        {
-        	debug(D_NET, "Hit!");
-			return 1;
+		if (list->nets[i].net.af == AF_INET && addr->sa_family == AF_INET)
+		{
+			struct in_addr ip = ((struct sockaddr_in *)addr)->sin_addr;
+			
+			debug(D_NET, "%s", inet_ntoa(list->nets[i].net4.network));
+			debug(D_NET, "/%s", inet_ntoa(list->nets[i].net4.netmask));
+			if ((ip.s_addr & list->nets[i].net4.netmask.s_addr) == list->nets[i].net4.network.s_addr)
+			{
+				debug(D_NET, "Hit!");
+				return 1;
+			}
+		} else if (list->nets[i].net.af == AF_INET6 && addr->sa_family == AF_INET6)
+		{
+			u_int8_t *ip = ((struct sockaddr_in6 *)addr)->sin6_addr.s6_addr;
+			int mask, j;
+			
+			mask = list->nets[i].net6.netmask;
+			for (j = 0; j < 16 && mask > 0; j++, mask -= 8)
+			{
+				unsigned char bytemask;
+				
+				bytemask = (mask < 8) ? ~((1L << (8 - mask)) - 1) : 0xff;
+				
+				if ((ip[j] & bytemask) != (list->nets[i].net6.network.s6_addr[j] & bytemask))
+					break;
+			}
+			
+			if (mask <= 0)
+			{
+				debug(D_NET, "Hit!");
+				return 1;
+			}
 		}
 	}
 
