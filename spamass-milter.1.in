@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.19 2004/03/18 18:37:08 dnelson Exp $
+.\" $Id: spamass-milter.1.in,v 1.20 2014/08/14 03:53:10 kovert Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -20,6 +20,7 @@
 .Op Fl r Ar nn
 .Op Fl u Ar defaultuser
 .Op Fl x
+.Op Fl S /path/to/sendmail
 .Op Fl - Ar spamc flags ...
 .Sh DESCRIPTION
 The
@@ -198,7 +199,14 @@ which will perform virtusertable and alias expansion.
 The resulting username is then passed to spamc.
 Requires the
 .Fl u
-flag.  
+flag.  The spamass-milter configuration process does its
+best to find sendmail, but it is possible to override this compiled-in
+setting via the
+.Fl S
+option.
+.It Fl S
+This option is used in conjunction with the -x option to specify a path
+to sendmail if the default compiled in choice is not satisfactory.
 .It Fl - Ar spamc flags ...
 Pass all remaining options to spamc. 
 This allows you to connect to a remote spamd with

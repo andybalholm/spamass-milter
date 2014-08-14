@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.95 2014/08/14 03:36:20 kovert Exp $
+//  $Id: spamass-milter.cpp,v 1.96 2014/08/14 03:53:11 kovert Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -128,7 +128,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.95 2014/08/14 03:36:20 kovert Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.96 2014/08/14 03:53:11 kovert Exp $";
 
 struct smfiDesc smfilter =
   {
@@ -161,6 +161,7 @@ bool dontmodify = false;        // Don't add SA headers, ever.
 bool flag_sniffuser = false;
 char *defaultuser;				/* Username to send to spamc if there are multiple recipients */
 char *defaultdomain;			/* Domain to append if incoming address has none */
+char *path_to_sendmail = SENDMAIL;
 char *spamdhost;
 struct networklist ignorenets;
 int spamc_argc;
@@ -178,7 +179,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:x";
+   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:xS:";
    char *sock = NULL;
    bool dofork = false;
    char *pidfilename = NULL;
@@ -228,6 +229,9 @@ main(int argc, char* argv[])
 			case 'r':
 				flag_reject = true;
 				reject_score = atoi(optarg);
+				break;
+			case 'S':
+				path_to_sendmail = strdup(optarg);
 				break;
 			case 'u':
 				flag_sniffuser = true;
@@ -462,11 +466,11 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 			FILE *p;
 			pid_t pid;
 
-			popen_argv[0] = SENDMAIL;
+			popen_argv[0] = path_to_sendmail;
 			popen_argv[1] = spambucket;
 			popen_argv[2] = NULL;
 			
-			debug(D_COPY, "calling %s %s", SENDMAIL, spambucket);
+			debug(D_COPY, "calling %s %s", path_to_sendmail, spambucket);
 			p = popenv(popen_argv, "w", &pid);
 			if (!p)
 			{
@@ -815,12 +819,12 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 		char *popen_argv[4];
 		pid_t pid;
 		
-		popen_argv[0] = SENDMAIL;
+		popen_argv[0] = path_to_sendmail;
 		popen_argv[1] = "-bv";
 		popen_argv[2] = envrcpt[0];
 		popen_argv[3] = NULL;
 
-		debug(D_RCPT, "calling %s -bv %s", SENDMAIL, envrcpt[0]);
+		debug(D_RCPT, "calling %s -bv %s", path_to_sendmail, envrcpt[0]);
 
 		p = popenv(popen_argv, "r", &pid);
 		if (!p)
