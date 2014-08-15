@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.97 2014/08/15 01:51:19 kovert Exp $
+//  $Id: spamass-milter.cpp,v 1.98 2014/08/15 02:07:19 kovert Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -128,7 +128,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.97 2014/08/15 01:51:19 kovert Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.98 2014/08/15 02:07:19 kovert Exp $";
 
 static char FilterName[] = "SpamAssassin";
 
@@ -174,6 +174,7 @@ char *spambucket;
 bool flag_full_email = false;		/* pass full email address to spamc */
 bool flag_expand = false;	/* alias/virtusertable expansion */
 bool warnedmacro = false;	/* have we logged that we couldn't fetch a macro? */
+bool auth = false;		/* don't scan authenticated users */
 
 // {{{ main()
 
@@ -196,6 +197,9 @@ main(int argc, char* argv[])
 	/* Process command line options */
 	while ((c = getopt(argc, argv, args)) != -1) {
 		switch (c) {
+			case 'a':
+				auth = true;
+				break;
 			case 'f':
 				dofork = true;
 				break;
@@ -284,7 +288,7 @@ main(int argc, char* argv[])
       cout << "SpamAssassin Sendmail Milter Plugin" << endl;
       cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-D host]" << endl;
       cout << "                      [-e defaultdomain] [-f] [-i networks] [-m] [-M]" << endl;
-      cout << "                      [-P pidfile] [-r nn] [-u defaultuser] [-x]" << endl;
+      cout << "                      [-P pidfile] [-r nn] [-u defaultuser] [-x] [-a]" << endl;
       cout << "                      [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
@@ -305,6 +309,7 @@ main(int argc, char* argv[])
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
               "          Uses 'defaultuser' if there are multiple recipients." << endl;
       cout << "   -x: pass email address through alias and virtusertable expansion." << endl;
+      cout << "   -a: don't scan messages over an authenticated connection." << endl;
       cout << "   -- spamc args: pass the remaining flags to spamc." << endl;
               
       exit(EX_USAGE);
@@ -761,6 +766,16 @@ mlfi_envfrom(SMFICTX* ctx, char** envfrom)
     return SMFIS_TEMPFAIL;
   }
   /* debug(D_ALWAYS, "ZZZ got private context %p", sctx); */
+
+  if (auth) {
+    const char *auth_type = smfi_getsymval(ctx,  
+        const_cast<char *>("{auth_type}"));
+
+    if (auth_type) {
+      debug(D_MISC, "auth_type=%s", auth_type);
+      return SMFIS_ACCEPT;
+    }
+  }
 
   debug(D_FUNC, "mlfi_envfrom: enter");
   try {
