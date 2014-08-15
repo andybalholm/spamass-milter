@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.99 2014/08/15 02:25:31 kovert Exp $
+//  $Id: spamass-milter.cpp,v 1.100 2014/08/15 02:46:50 kovert Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -128,7 +128,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.99 2014/08/15 02:25:31 kovert Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.100 2014/08/15 02:46:50 kovert Exp $";
 
 static char FilterName[] = "SpamAssassin";
 
@@ -184,7 +184,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:xS:R:C:";
+   const char *args = "afd:mMp:P:r:u:D:i:b:B:e:xS:R:C:";
    char *sock = NULL;
    bool dofork = false;
    char *pidfilename = NULL;
@@ -298,11 +298,13 @@ main(int argc, char* argv[])
       cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-D host]" << endl;
       cout << "                      [-e defaultdomain] [-f] [-i networks] [-m] [-M]" << endl;
       cout << "                      [-P pidfile] [-r nn] [-u defaultuser] [-x] [-a]" << endl;
+      cout << "                      [-C rejectcode] [ -R rejectmsg ]" << endl;
       cout << "                      [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
       cout << "          recipient(s) will not receive anything." << endl;
       cout << "   -B bucket: add this mail address as a BCC recipient of spam." << endl;
+      cout << "   -C RejectCode: using this Reject Code." << endl;
       cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
       cout << "   -D host: connect to spamd at remote host (deprecated)" << endl;
       cout << "   -e defaultdomain: pass full email address to spamc instead of just\n"
