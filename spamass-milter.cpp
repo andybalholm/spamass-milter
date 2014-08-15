@@ -1,6 +1,6 @@
 // 
 //
-//  $Id: spamass-milter.cpp,v 1.98 2014/08/15 02:07:19 kovert Exp $
+//  $Id: spamass-milter.cpp,v 1.99 2014/08/15 02:25:31 kovert Exp $
 //
 //  SpamAss-Milter 
 //    - a rather trivial SpamAssassin Sendmail Milter plugin
@@ -128,7 +128,7 @@ int daemon(int nochdir, int noclose);
 
 // }}} 
 
-static const char Id[] = "$Id: spamass-milter.cpp,v 1.98 2014/08/15 02:07:19 kovert Exp $";
+static const char Id[] = "$Id: spamass-milter.cpp,v 1.99 2014/08/15 02:25:31 kovert Exp $";
 
 static char FilterName[] = "SpamAssassin";
 
@@ -165,6 +165,8 @@ char *defaultuser;				/* Username to send to spamc if there are multiple recipie
 char *defaultdomain;			/* Domain to append if incoming address has none */
 char *path_to_sendmail = (char *) SENDMAIL;
 char *spamdhost;
+char *rejecttext = NULL;				/* If we reject a mail, then use this text */
+char *rejectcode = NULL;				/* If we reject a mail, then use code */
 struct networklist ignorenets;
 int spamc_argc;
 char **spamc_argv;
@@ -182,7 +184,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:xS:";
+   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:xS:R:C:";
    char *sock = NULL;
    bool dofork = false;
    char *pidfilename = NULL;
@@ -192,86 +194,93 @@ main(int argc, char* argv[])
 	std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
 #endif
 
-   openlog("spamass-milter", LOG_PID, LOG_MAIL);
+    openlog("spamass-milter", LOG_PID, LOG_MAIL);
 
-	/* Process command line options */
-	while ((c = getopt(argc, argv, args)) != -1) {
-		switch (c) {
-			case 'a':
-				auth = true;
-				break;
-			case 'f':
-				dofork = true;
-				break;
-			case 'd':
-				parse_debuglevel(optarg);
-				break;
-			case 'D':
-				spamdhost = strdup(optarg);
-				break;
-			case 'e':
-				flag_full_email = true;
-				defaultdomain = strdup(optarg);
-				break;
-			case 'i':
-				debug(D_MISC, "Parsing ignore list");
-				parse_networklist(optarg, &ignorenets);
-				break;
-			case 'm':
-				dontmodifyspam = true;
-				smfilter.xxfi_flags &= ~SMFIF_CHGBODY;
-				break;
-			case 'M':
-				dontmodify = true;
-				dontmodifyspam = true;
-				smfilter.xxfi_flags &= ~(SMFIF_CHGBODY|SMFIF_CHGHDRS);
-				break;
-			case 'p':
-				sock = strdup(optarg);
-				break;
-			case 'P':
-				pidfilename = strdup(optarg);
-				break;
-			case 'r':
-				flag_reject = true;
-				reject_score = atoi(optarg);
-				break;
-			case 'S':
-				path_to_sendmail = strdup(optarg);
-				break;
-			case 'u':
-				flag_sniffuser = true;
-				defaultuser = strdup(optarg);
-				break;
-			case 'b':
-			case 'B':
-				if (flag_bucket)
-				{
-					fprintf(stderr, "Can only have one -b or -B flag\n");
-					err = 1;
-					break;
-				}
-				flag_bucket = true;
-				if (c == 'b')
-				{
-					flag_bucket_only = true;
-					smfilter.xxfi_flags |= SMFIF_DELRCPT; // May delete recipients
-				}
-				// we will modify the recipient list; if spamc returns
-				// indicating that this mail is spam, the message will be
-				// sent to <optarg>@localhost
-				smfilter.xxfi_flags |= SMFIF_ADDRCPT; // May add recipients
-				// XXX we should probably verify that optarg is vaguely sane
-				spambucket = strdup( optarg );
-				break;
-			case 'x':
-				flag_expand = true;
-				break;
-			case '?':
-				err = 1;
-				break;
-		}
-	}
+
+    /* Process command line options */
+    while ((c = getopt(argc, argv, args)) != -1) {
+        switch (c) {
+            case 'a':
+                auth = true;
+                break;
+            case 'f':
+                dofork = true;
+                break;
+            case 'd':
+                parse_debuglevel(optarg);
+                break;
+            case 'D':
+                spamdhost = strdup(optarg);
+                break;
+            case 'e':
+                flag_full_email = true;
+                defaultdomain = strdup(optarg);
+                break;
+            case 'i':
+                debug(D_MISC, "Parsing ignore list");
+                parse_networklist(optarg, &ignorenets);
+                break;
+            case 'm':
+                dontmodifyspam = true;
+                smfilter.xxfi_flags &= ~SMFIF_CHGBODY;
+                break;
+            case 'M':
+                dontmodify = true;
+                dontmodifyspam = true;
+                smfilter.xxfi_flags &= ~(SMFIF_CHGBODY|SMFIF_CHGHDRS);
+                break;
+            case 'p':
+                sock = strdup(optarg);
+                break;
+            case 'P':
+                pidfilename = strdup(optarg);
+                break;
+            case 'r':
+                flag_reject = true;
+                reject_score = atoi(optarg);
+                break;
+            case 'S':
+                path_to_sendmail = strdup(optarg);
+                break;
+            case 'C':
+                rejectcode = strdup (optarg);
+                break;
+            case 'R':
+                rejecttext = strdup (optarg);
+                break;
+            case 'u':
+                flag_sniffuser = true;
+                defaultuser = strdup(optarg);
+                break;
+            case 'b':
+            case 'B':
+                if (flag_bucket)
+                {
+                    fprintf(stderr, "Can only have one -b or -B flag\n");
+                    err = 1;
+                    break;
+                }
+                flag_bucket = true;
+                if (c == 'b')
+                {
+                    flag_bucket_only = true;
+                    smfilter.xxfi_flags |= SMFIF_DELRCPT; // May delete recipients
+                }
+                // we will modify the recipient list; if spamc returns
+                // indicating that this mail is spam, the message will be
+                // sent to <optarg>@localhost
+                smfilter.xxfi_flags |= SMFIF_ADDRCPT; // May add recipients
+                // XXX we should probably verify that optarg is vaguely sane
+                spambucket = strdup( optarg );
+                break;
+            case 'x':
+                flag_expand = true;
+                break;
+            case '?':
+                err = 1;
+                break;
+        }
+    }
 
    if (flag_full_email && !flag_sniffuser)
    {
@@ -306,6 +315,7 @@ main(int argc, char* argv[])
       cout << "   -P pidfile: Put processid in pidfile" << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n"
               "          use -1 to reject any messages tagged by SA." << endl;
+      cout << "   -R RejectText: using this Reject Text." << endl;
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
               "          Uses 'defaultuser' if there are multiple recipients." << endl;
       cout << "   -x: pass email address through alias and virtusertable expansion." << endl;
@@ -315,37 +325,45 @@ main(int argc, char* argv[])
       exit(EX_USAGE);
    }
 
-	if (pidfilename)
-	{
-		unlink(pidfilename);
-		pidfile = fopen(pidfilename,"w");
-		if (!pidfile)
-		{
-			fprintf(stderr, "Could not open pidfile: %s\n", strerror(errno));
-			exit(1);
-		}
-		/* leave the file open through the fork, since we don't know our pid
-		   yet
-		*/
-	}
+    /* Set standard reject text */
+    if (rejecttext == NULL) {
+        rejecttext = strdup ("Blocked by SpamAssassin");
+    }
+    if (rejectcode == NULL) {
+        rejectcode = strdup ("5.7.1");
+    }
+
+    if (pidfilename)
+    {
+        unlink(pidfilename);
+        pidfile = fopen(pidfilename,"w");
+        if (!pidfile)
+        {
+            fprintf(stderr, "Could not open pidfile: %s\n", strerror(errno));
+            exit(1);
+        }
+        /* leave the file open through the fork, since we don't know our pid
+           yet
+        */
+    }
 
 
-	if (dofork == true) 
-	{
-		if (daemon(0, 0) == -1)
-		{
+    if (dofork == true) 
+    {
+        if (daemon(0, 0) == -1)
+        {
             fprintf(stderr, "daemon() failed: %s\n", strerror(errno));
             exit(1);
-		}
-	}
-	
-	if (pidfile)
-	{
-		fprintf(pidfile, "%ld\n", (long)getpid());
-		fclose(pidfile);
-		pidfile = NULL;
-	}	
-	
+        }
+    }
+    
+    if (pidfile)
+    {
+        fprintf(pidfile, "%ld\n", (long)getpid());
+        fclose(pidfile);
+        pidfile = NULL;
+    }    
+    
    {
       struct stat junk;
       if (stat(sock,&junk) == 0) unlink(sock);
@@ -460,7 +478,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 	if (do_reject)
 	{
 		debug(D_MISC, "Rejecting");
-		smfi_setreply(ctx, const_cast<char*>("550"), const_cast<char*>("5.7.1"), const_cast<char*>("Blocked by SpamAssassin"));
+		smfi_setreply(ctx, const_cast<char*>("550"), rejectcode, rejecttext);
 
 
 		if (flag_bucket)

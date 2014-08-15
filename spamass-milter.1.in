@@ -1,4 +1,4 @@
-.\" $Id: spamass-milter.1.in,v 1.20 2014/08/14 03:53:10 kovert Exp $
+.\" $Id: spamass-milter.1.in,v 1.21 2014/08/15 02:25:31 kovert Exp $
 .Dd July 25, 2001
 .Os
 .Dt SPAMASS_MILTER 8
@@ -9,6 +9,7 @@
 .Nm
 .Fl p Ar socket
 .Op Fl b Ns | Ns Fl B Ar spamaddress
+.Op Fl C rejectcode
 .Op Fl d Ar debugflags
 .Op Fl D Ar host
 .Op Fl e Ar defaultdomain
@@ -18,6 +19,7 @@
 .Op Fl M
 .Op Fl P Ar pidfile
 .Op Fl r Ar nn
+.Op Fl r rejectmsg
 .Op Fl u Ar defaultuser
 .Op Fl x
 .Op Fl S /path/to/sendmail
@@ -53,6 +55,11 @@ Only one of
 and
 .Fl B
 may be used.
+.It Fl C Ar rejectcode
+Mail that is rejected is rejected by default with a 5.7.1 code.  This option
+allows that to be overridden.  See also, -R
+.Fl S
+option.
 .It Fl d Ar debugflags
 Enables logging. 
 .Ar debugflags 
@@ -171,6 +178,15 @@ a separate folder just in case of false positives, you can use
 .Fl r Ar 15
 and reject flagrant spam outright while still receiving low-scoring
 messages.
+.It Fl R Ar rejecttext
+Mail that is rejected is rejected with the message "Blocked by SpamAssassin".
+This option allows the user to call with a different message, instead.   See
+also, the
+.Fl C
+option
+.It Fl S Ar /path/to/sendmail
+This option is used in conjunction with the -x option to specify a path
+to sendmail if the default compiled in choice is not satisfactory.
 .It Fl u Ar defaultuser
 Pass the username part of the first recipient to spamc with the 
 .Fl u 
@@ -202,11 +218,6 @@ Requires the
 flag.  The spamass-milter configuration process does its
 best to find sendmail, but it is possible to override this compiled-in
 setting via the
-.Fl S
-option.
-.It Fl S
-This option is used in conjunction with the -x option to specify a path
-to sendmail if the default compiled in choice is not satisfactory.
 .It Fl - Ar spamc flags ...
 Pass all remaining options to spamc. 
 This allows you to connect to a remote spamd with
@@ -225,3 +236,4 @@ client interface to SpamAssassin
 .Sh AUTHORS
 .An "Georg C. F. Greve" Aq greve@gnu.org
 .An "Dan Nelson" Aq dnelson@allantgroup.com
+.An "Todd Kover" Aq kovert@omniscient.com
