@@ -1,72 +1,78 @@
-#!/bin/sh
+#! /bin/sh
 #
-# $Id: spamass-milter,v 1.4 2002/07/24 16:19:53 dnelson Exp $
-#
-# Sample init script for Debian GNU/Linux
-#
-#  Copyright (c) 2002 Georg C. F. Greve <greve@gnu.org>,
-#   all rights maintained by FSF Europe e.V., 
-#   Villa Vogelsang, Antonienallee 1, 45279 Essen, Germany
-#
-#   This program is free software; you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation; either version 2 of the License, or
-#   (at your option) any later version.
-#  
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#  
-#   You should have received a copy of the GNU General Public License
-#   along with this program; if not, write to the Free Software
-#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#
-#   Contact:
-#            Michael Brown <michaelb@opentext.com>
-#
+# /usr/local/etc/rc.d script for FreeBSD
+# $Id: spamass-milter,v 1.5 2014/09/11 00:42:45 kovert Exp $
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/etc/mail/bin/spamass-milter
-SOCKET=/var/run/sendmail/spamass.sock
-DESC="Sendmail milter plugin for SpamAssassin"
+# PROVIDE: spamass_milter
+# KEYWORD: FreeBSD
 
-test -x $DAEMON || exit 0
+. /usr/local/etc/rc.subr
 
-set -e
+name=spamass_milter
+rcvar=`set_rcvar`
+
+command=/usr/local/sbin/spamass-milter
+
+# Override the spamass_milter_* variables in one of these files:
+#	/etc/rc.conf
+#	/etc/rc.conf.local
+#	/etc/rc.conf.d/spamass-milter
+#
+# DO NOT CHANGE THESE DEFAULT VALUES HERE
+#
+# spamass_milter_enable     YES or NO
+# spamass_milter_flags      extra flags to pass to spamass-milter
+#
+# You probably won't need to change these unless you're running as
+# non-root (see the rc.subr manpage for those flags):
+#
+# spamass_milter_pidfile    path to pidfile
+# spamass_milter_sockfile   path to milter socket
+
+# load settings
+load_rc_config $name
+
+spamass_milter_enable=${spamass_milter_enable:-NO}
+spamass_milter_pidfile=${spamass_milter_pidfile:-/var/run/spamass-milter.pid}
+spamass_milter_sockfile=${spamass_milter_sockfile:-/var/run/spamass.sock}
+pidfile=${spamass_milter_pidfile}
+spamass_milter_flags="-p $spamass_milter_sockfile -f -P $spamass_milter_pidfile $spamass_milter_flags"
+
+run_rc_command "$1"
+
+exit 1
+
+
+if ! PREFIX=$(expr $(realpath $0) : "\(/.*\)/etc/rc\.d/$(basename $0)\$"); then
+    echo "$0: Cannot determine the PREFIX - aborting" >&2
+    exit 1
+fi
 
 case "$1" in
-  start)
-	echo -n "Starting $DESC: "
-
-	start-stop-daemon --start -b --exec $DAEMON --oknodo -- -p $SOCKET
-
-	echo "${DAEMON}"
+start)
+	rm -f /var/run/spamass.sock
+	[ -x ${PREFIX}/sbin/spamass-milter ] && 
+		${PREFIX}/sbin/spamass-milter -p /var/run/spamass.sock -f -P /var/run/spamass-milter.pid && 
+		echo -n ' spamass-milter'
 	;;
-  stop)
-	echo -n "Stopping $DESC: "
-
-	start-stop-daemon --stop --exec $DAEMON --oknodo 
-	/bin/sleep 5s
-	/bin/rm -f $SOCKET
-
-	echo "${DAEMON}"
-	;;
-  restart)
-	echo -n "Restarting $DESC: "
-
-	start-stop-daemon --stop --exec $DAEMON --oknod
-	/bin/sleep 5s
-	/bin/rm -f $SOCKET
-        start-stop-daemon --start -b --exec $DAEMON --oknodo -- -p $SOCKET
-
-        echo "${DAEMON}"
+stop)
+	if [ -s /var/run/spamass-milter.pid ] ; then
+		pid=$(cat /var/run/spamass-milter.pid)
+		kill -TERM $pid
+		loop=0
+		while [ $loop -lt 10 ] ; do
+			kill -0 $pid >/dev/null 2>&1 || break
+			[ $loop -eq 1 ] && echo -n "Sleeping for 10 seconds to allow spamass-milter to shutdown"
+			[ $loop -ge 1 ] && echo -n "."
+			sleep 1
+			loop=$(( $loop + 1 ))
+		done
+		kill -0 $pid >/dev/null 2>&1 && echo "giving up" || echo "done"
+	fi
 
 	;;
-  *)
-	N=$0
-	echo "Usage: $N {start|stop|restart}" >&2
-	exit 1
+*)
+	echo "Usage: `basename $0` {start|stop}" >&2
 	;;
 esac
 
