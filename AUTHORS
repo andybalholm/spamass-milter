@@ -1,11 +1,5 @@
-$Id: AUTHORS,v 1.6 2003/06/03 06:24:54 dnelson Exp $
-
 SpamAssassin Sendmail Mail Filter (Milter) Plugin 
 -------------------------------------------------
-
-Current Maintainer:
-	Dan Nelson <dnelson@allantgroup.com>
-
 
 Authors:
 	Georg C. F. Greve <greve@gnu.org>
