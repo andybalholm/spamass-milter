@@ -2,6 +2,9 @@ Spamass-Milter, a small
  - SpamAssassin Sendmail Mail Filter (Milter) Plugin 
 -----------------------------------------------------
 
+The official location of this project is
+    http://savannah.nongnu.org/projects/spamass-milt/
+
 For information about Sendmail or SpamAssassin, please see 
 	http://www.sendmail.org
 	http://www.spamassassin.org
