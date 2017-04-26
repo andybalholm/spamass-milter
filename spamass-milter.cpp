@@ -604,43 +604,6 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 // retrieve the content of a specific field in the header
 // and return it.
 string
-old_retrieve_field(const string& header, const string& field)
-{
-  // look for beginning of content
-  string::size_type pos = find_nocase(header, "\n" + field + ": ");
-
-  // return empty string if not found
-  if (pos == string::npos)
-  {
-    debug(D_STR, "r_f: failed");
-    return string("");
-  }
-
-  // look for end of field name
-  pos = find_nocase(header, " ", pos) + 1;
-  
-  string::size_type pos2(pos);
-
-  // is field empty? 
-  if (pos2 == find_nocase(header, "\n", pos2))
-    return string("");
-
-  // look for end of content
-  do {
-
-    pos2 = find_nocase(header, "\n", pos2+1);
-
-  }
-  while ( pos2 < string::npos &&
-	  isspace(header[pos2+1]) );
-
-  return header.substr(pos, pos2-pos);
-
-}
-
-// retrieve the content of a specific field in the header
-// and return it.
-string
 retrieve_field(const string& header, const string& field)
 {
   // Find the field
