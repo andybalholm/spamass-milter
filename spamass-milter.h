@@ -83,6 +83,12 @@ struct networklist
 	int num_nets;
 };
 
+/* an array of addresses */
+struct addresslist
+{
+        char **addrs;
+        int num_addrs;
+};
 
 // Debug tokens.
 enum debuglevel
@@ -199,6 +205,8 @@ int cmp_nocase_partial(const string&, const string&);
 void closeall(int fd);
 void parse_networklist(char *string, struct networklist *list);
 int ip_in_networklist(struct sockaddr *addr, struct networklist *list);
+void parse_addresslist(char *string, struct addresslist *list);
+int addr_in_addresslist(char *addr, struct addresslist *list);
 void parse_debuglevel(char* string);
 char *strlwr(char *str);
 void warnmacro(const char *macro, const char *scope);

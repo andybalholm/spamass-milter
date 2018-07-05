@@ -1,4 +1,4 @@
-// 
+//
 //
 //  $Id: spamass-milter.cpp,v 1.100 2014/08/15 02:46:50 kovert Exp $
 //
@@ -169,6 +169,7 @@ char *spamdhost;
 char *rejecttext = NULL;				/* If we reject a mail, then use this text */
 char *rejectcode = NULL;				/* If we reject a mail, then use code */
 struct networklist ignorenets;
+struct addresslist ignoreaddrs;
 int spamc_argc;
 char **spamc_argv;
 bool flag_bucket = false;
@@ -185,7 +186,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "afd:mMp:P:r:u:D:i:b:B:e:xS:R:C:g:";
+   const char *args = "afd:mMp:P:r:u:D:i:b:B:e:xS:R:C:g:T:";
    char *sock = NULL;
    char *group = NULL;
    bool dofork = false;
@@ -281,6 +282,10 @@ main(int argc, char* argv[])
             case 'x':
                 flag_expand = true;
                 break;
+            case 'T':
+                debug(D_MISC, "Parsing recipient address ignore list");
+                parse_addresslist(optarg, &ignoreaddrs);
+                break;
             case '?':
                 err = 1;
                 break;
@@ -303,6 +308,7 @@ main(int argc, char* argv[])
       cout << "Usage: spamass-milter -p socket [-b|-B bucket] [-d xx[,yy...]] [-D host]" << endl;
       cout << "                      [-e defaultdomain] [-f] [-i networks] [-m] [-M]" << endl;
       cout << "                      [-P pidfile] [-r nn] [-u defaultuser] [-x] [-a]" << endl;
+      cout << "                      [-T addresses]" << endl;
       cout << "                      [-C rejectcode] [-R rejectmsg] [-g group]" << endl;
       cout << "                      [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
@@ -328,6 +334,8 @@ main(int argc, char* argv[])
               "          Uses 'defaultuser' if there are multiple recipients." << endl;
       cout << "   -x: pass email address through alias and virtusertable expansion." << endl;
       cout << "   -a: don't scan messages over an authenticated connection." << endl;
+      cout << "   -T: skip (ignore) checks if any recipient is in this address list" << endl;
+      cout << "          example: -T foo@bar.com,spamlover@yourdomain.com" << endl;
       cout << "   -- spamc args: pass the remaining flags to spamc." << endl;
 
       exit(EX_USAGE);
@@ -891,6 +899,13 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	FILE *p;
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
+
+   if (addr_in_addresslist(envrcpt[0], &ignoreaddrs))
+   {
+      debug(D_RCPT, "%s is in our ignore addrlist - accepting message", envrcpt[0]);
+      debug(D_FUNC, "mlfi_envrcpt: exit ignore");
+      return SMFIS_ACCEPT;
+   }
 
 	if (flag_expand)
 	{
@@ -2239,6 +2254,73 @@ int ip_in_networklist(struct sockaddr *addr, struct networklist *list)
 	}
 
 	return 0;
+}
+
+void parse_addresslist(char *string, struct addresslist *list)
+{
+   char *token;
+
+   /* make a copy so we don't overwrite argv[] */
+   string = strdup(string);
+
+   while ((token = strsep(&string, ", ")))
+   {
+      char *addr = (char *)malloc(strlen(token)+3);
+      addr = strcat(addr,"<");
+      addr = strcat(addr,token);
+      addr = strcat(addr,">");
+
+      if (list->num_addrs % 10 == 0)
+         list->addrs = (char **)realloc(list->addrs, sizeof(*list->addrs) * (list->num_addrs + 10));
+
+      if (strchr(addr, '@') == NULL || strchr(addr, '.') == NULL || strchr(addr, '@') > strrchr(addr, '.'))
+      {
+         fprintf(stderr, "Could not parse \"%s\" as an email address\n", addr);
+         exit(1);
+      }
+
+
+      {
+         debug(D_MISC, "Adding %s to address list", addr);
+      }
+
+      list->addrs[list->num_addrs] = addr;
+      list->num_addrs++;
+   }
+   free(string);
+}
+
+int addr_in_addresslist(char *addr, struct addresslist *list)
+{
+   int i;
+
+   if (list->num_addrs == 0)
+      return 0;
+
+   if (addr == NULL)
+   {
+      debug(D_RCPT, "Cannot check a null address");
+      return 0;
+   }
+
+   if (strcmp(addr,"") == 0)
+   {
+      debug(D_RCPT, "Cannot check a blank address");
+      return 0;
+   }
+
+   debug(D_RCPT, "Checking %s against:", addr);
+   for (i = 0; i < list->num_addrs; i++)
+   {
+      debug(D_RCPT, "%s", list->addrs[i]);
+      if (strcmp(addr,list->addrs[i]) == 0)
+      {
+         debug(D_RCPT, "Hit!");
+         return 1;
+      }
+   }
+
+   return 0;
 }
 
 char *strlwr(char *str)
