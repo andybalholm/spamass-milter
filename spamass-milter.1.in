@@ -10,7 +10,8 @@
 .Fl p Ar socket
 .Op Fl a
 .Op Fl b Ns | Ns Fl B Ar spamaddress
-.Op Fl C rejectcode
+.Op Fl c Ar returncode
+.Op Fl C Ar rejectcode
 .Op Fl d Ar debugflags
 .Op Fl D Ar host
 .Op Fl e Ar defaultdomain
@@ -59,11 +60,19 @@ Only one of
 and
 .Fl B
 may be used.
+.It Fl c Ar returncode
+Mail that is rejected is rejected by default with a 550 returncode.  This option
+allows that to be overridden.  See also 
+.Fl C
+and
+.Fl R .
 .It Fl C Ar rejectcode
 Mail that is rejected is rejected by default with a 5.7.1 code.  This option
-allows that to be overridden.  See also, -R
-.Fl S
-option.
+allows that to be overridden.  See also 
+.Fl R
+and
+.Fl c
+.
 .It Fl d Ar debugflags
 Enables logging. 
 .Ar debugflags 
