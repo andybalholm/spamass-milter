@@ -168,6 +168,7 @@ char *path_to_sendmail = (char *) SENDMAIL;
 char *spamdhost;
 char *rejecttext = NULL;				/* If we reject a mail, then use this text */
 char *rejectcode = NULL;				/* If we reject a mail, then use code */
+char *reject_reply_code = NULL;				/* If we reject a mail, then use smtp code */
 struct networklist ignorenets;
 struct addresslist ignoreaddrs;
 int spamc_argc;
@@ -186,7 +187,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "afd:mMp:P:r:u:D:i:b:B:e:xS:R:C:g:T:";
+   const char *args = "afd:mMp:P:r:u:D:i:b:B:e:xS:R:c:C:g:T:";
    char *sock = NULL;
    char *group = NULL;
    bool dofork = false;
@@ -247,6 +248,9 @@ main(int argc, char* argv[])
                 break;
             case 'S':
                 path_to_sendmail = strdup(optarg);
+                break;
+            case 'c':
+                reject_reply_code = strdup (optarg);
                 break;
             case 'C':
                 rejectcode = strdup (optarg);
@@ -309,13 +313,14 @@ main(int argc, char* argv[])
       cout << "                      [-e defaultdomain] [-f] [-i networks] [-m] [-M]" << endl;
       cout << "                      [-P pidfile] [-r nn] [-u defaultuser] [-x] [-a]" << endl;
       cout << "                      [-T addresses]" << endl;
-      cout << "                      [-C rejectcode] [-R rejectmsg] [-g group]" << endl;
+      cout << "                      [-c RejectRepyCode] [-C rejectcode] [-R rejectmsg] [-g group]" << endl;
       cout << "                      [-- spamc args ]" << endl;
       cout << "   -p socket: path to create socket" << endl;
       cout << "   -b bucket: redirect spam to this mail address.  The orignal" << endl;
       cout << "          recipient(s) will not receive anything." << endl;
       cout << "   -B bucket: add this mail address as a BCC recipient of spam." << endl;
-      cout << "   -C RejectCode: using this Reject Code." << endl;
+      cout << "   -c RejectRepyCode: reject using this Reply Code (default 550)." << endl;
+      cout << "   -C RejectCode: using this Reject Code (default 5.7.1)." << endl;
       cout << "   -d xx[,yy ...]: set debug flags.  Logs to syslog" << endl;
       cout << "   -D host: connect to spamd at remote host (deprecated)" << endl;
       cout << "   -e defaultdomain: pass full email address to spamc instead of just\n"
@@ -347,6 +352,9 @@ main(int argc, char* argv[])
     }
     if (rejectcode == NULL) {
         rejectcode = strdup ("5.7.1");
+    }
+    if (reject_reply_code == NULL) {
+        reject_reply_code = strdup ("550");
     }
 
     if (pidfilename)
@@ -518,7 +526,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 	if (do_reject)
 	{
 		debug(D_MISC, "Rejecting");
-		smfi_setreply(ctx, const_cast<char*>("550"), rejectcode, rejecttext);
+		smfi_setreply(ctx, const_cast<char*>(reject_reply_code), rejectcode, rejecttext);
 
 
 		if (flag_bucket)

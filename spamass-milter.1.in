@@ -59,6 +59,9 @@ Only one of
 and
 .Fl B
 may be used.
+.It Fl c Ar returncode
+Mail that is rejected is rejected by default with a 550 returncode.  This option
+allows that to be overridden.  See also, -C and -R
 .It Fl C Ar rejectcode
 Mail that is rejected is rejected by default with a 5.7.1 code.  This option
 allows that to be overridden.  See also, -R
