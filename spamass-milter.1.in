@@ -191,6 +191,9 @@ a separate folder just in case of false positives, you can use
 .Fl r Ar 15
 and reject flagrant spam outright while still receiving low-scoring
 messages.
+.It Fl l Ar nn
+Randomly defer scanned email if it greater than or equal to
+.Ar nn . The probability of defering increases with the spam score.
 .It Fl R Ar rejecttext
 Mail that is rejected is rejected with the message "Blocked by SpamAssassin".
 This option allows the user to call with a different message, instead.   See
