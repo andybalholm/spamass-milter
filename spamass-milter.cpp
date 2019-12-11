@@ -2452,12 +2452,10 @@ FILE *popenv(char *const argv[], const char *type, pid_t *pid)
 	return (iop);
 }
 
-// {{{ convert status to nonpermant
-
+// convert status to nonpermant
 //
 // Replace the first char of a string to convert a status to nonpermanent
-char*
-to_nonpermanent(char* instring)
+char *to_nonpermanent(char* instring)
 {
   char* retstring=strdup(instring);
   retstring[0]=52; // 4
