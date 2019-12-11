@@ -17,6 +17,7 @@
 .Op Fl f
 .Op Fl g Ar group
 .Op Fl i Ar networks
+.Op Fl l Ar nn
 .Op Fl m
 .Op Fl M
 .Op Fl P Ar pidfile
@@ -140,6 +141,10 @@ Multiple
 flags will append to the list.
 For example, if you list all your internal networks, no outgoing emails
 will be filtered.
+.It Fl l Ar nn
+Randomly defer scanned email if it greater than or equal to
+.Ar nn . The probability of defering increases with the spam score. 
+Requires .Fl r as an upper limit. 
 .It Fl m
 Disables modification of the 
 .Ql Subject: 
@@ -191,9 +196,6 @@ a separate folder just in case of false positives, you can use
 .Fl r Ar 15
 and reject flagrant spam outright while still receiving low-scoring
 messages.
-.It Fl l Ar nn
-Randomly defer scanned email if it greater than or equal to
-.Ar nn . The probability of defering increases with the spam score.
 .It Fl R Ar rejecttext
 Mail that is rejected is rejected with the message "Blocked by SpamAssassin".
 This option allows the user to call with a different message, instead.   See
