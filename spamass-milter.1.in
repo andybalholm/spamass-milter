@@ -48,8 +48,13 @@ unmiltered, depending on the parameters in
 .It Fl a
 Skips messages received on an authenticated connection.
 .It Fl A
-Always scan and tag messages but treat .Fl T , .Fl i and .Fl a as an exception
-from rejecting and defering mails classified as spam.
+Always scan and tag messages but treat 
+.Fl T
+, 
+.Fl i
+and
+.Fl a
+as an exception from rejecting and defering mails classified as spam.
 .It Fl b Ar spamaddress
 Redirects tagged spam to the specified email address.
 All envelope recipients are removed, and inserted into the message as
@@ -66,11 +71,14 @@ and
 may be used.
 .It Fl c Ar returncode
 Mail that is rejected is rejected by default with a 550 returncode.  This option
-allows that to be overridden.  See also, -C and -R
+allows that to be overridden.  See also 
+.Fl C
+and
+.Fl R
 .It Fl C Ar rejectcode
 Mail that is rejected is rejected by default with a 5.7.1 code.  This option
-allows that to be overridden.  See also, -R
-.Fl S
+allows that to be overridden.  See also 
+.Fl R
 option.
 .It Fl d Ar debugflags
 Enables logging. 
@@ -147,8 +155,11 @@ For example, if you list all your internal networks, no outgoing emails
 will be filtered.
 .It Fl l Ar nn
 Randomly defer scanned email if it greater than or equal to
-.Ar nn . The probability of defering increases with the spam score. 
-Requires .Fl r as an upper limit. 
+.Ar nn
+. The probability of defering increases with the spam score. 
+Requires 
+.Fl r
+as an upper limit. 
 .It Fl m
 Disables modification of the 
 .Ql Subject: 
