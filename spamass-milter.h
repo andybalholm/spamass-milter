@@ -211,5 +211,6 @@ void parse_debuglevel(char* string);
 char *strlwr(char *str);
 void warnmacro(const char *macro, const char *scope);
 FILE *popenv(char *const argv[], const char *type, pid_t *pid);
+char *to_nonpermanent(char* instring);
 
 #endif
