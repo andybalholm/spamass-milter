@@ -74,12 +74,14 @@ Mail that is rejected is rejected by default with a 550 returncode.  This option
 allows that to be overridden.  See also 
 .Fl C
 and
-.Fl R
+.Fl R .
 .It Fl C Ar rejectcode
 Mail that is rejected is rejected by default with a 5.7.1 code.  This option
 allows that to be overridden.  See also 
 .Fl R
-option.
+and
+.Fl c
+.
 .It Fl d Ar debugflags
 Enables logging. 
 .Ar debugflags 
@@ -155,8 +157,8 @@ For example, if you list all your internal networks, no outgoing emails
 will be filtered.
 .It Fl l Ar nn
 Randomly defer scanned email if it greater than or equal to
-.Ar nn
-. The probability of defering increases with the spam score. 
+.Ar nn .
+The probability of defering increases with the spam score. 
 Requires 
 .Fl r
 as an upper limit. 
