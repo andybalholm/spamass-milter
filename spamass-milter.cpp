@@ -90,6 +90,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <grp.h>
+#include <time.h>
 
 // C++ includes
 #include <cstdio>
@@ -158,7 +159,9 @@ const char *const debugstrings[] = {
 
 int flag_debug = (1<<D_ALWAYS);
 bool flag_reject = false;
+bool flag_random_defer = false;
 int reject_score = -1;
+int random_defer_score = -1;
 bool dontmodifyspam = false;    // Don't modify/add body or spam results headers
 bool dontmodify = false;        // Don't add SA headers, ever.
 bool flag_sniffuser = false;
@@ -169,6 +172,8 @@ char *spamdhost;
 char *rejecttext = NULL;				/* If we reject a mail, then use this text */
 char *rejectcode = NULL;				/* If we reject a mail, then use code */
 char *reject_reply_code = NULL;				/* If we reject a mail, then use smtp code */
+char *defercode = NULL;				/* If we reject a mail, then use code */
+char *defer_reply_code = NULL;				/* If we reject a mail, then use smtp code */
 struct networklist ignorenets;
 struct addresslist ignoreaddrs;
 int spamc_argc;
@@ -187,7 +192,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "afd:mMp:P:r:u:D:i:b:B:e:xS:R:c:C:g:T:";
+   const char *args = "afd:mMp:P:r:l:u:D:i:b:B:e:xS:R:c:C:g:T:";
    char *sock = NULL;
    char *group = NULL;
    bool dofork = false;
@@ -245,6 +250,10 @@ main(int argc, char* argv[])
             case 'r':
                 flag_reject = true;
                 reject_score = atoi(optarg);
+                break;
+            case 'l':
+                flag_random_defer = true;
+                random_defer_score = atoi(optarg);
                 break;
             case 'S':
                 path_to_sendmail = strdup(optarg);
@@ -334,6 +343,8 @@ main(int argc, char* argv[])
       cout << "   -P pidfile: Put processid in pidfile" << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n"
               "          use -1 to reject any messages tagged by SA." << endl;
+      cout << "   -l nn: randomly defer messages with a score >= nn with an non permanent SMTP error.\n"
+              "      Please be aware this will increase load." << endl;
       cout << "   -R RejectText: using this Reject Text." << endl;
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
               "          Uses 'defaultuser' if there are multiple recipients." << endl;
@@ -356,6 +367,8 @@ main(int argc, char* argv[])
     if (reject_reply_code == NULL) {
         reject_reply_code = strdup ("550");
     }
+    defercode=to_nonpermanent(rejectcode);
+    defer_reply_code=to_nonpermanent(reject_reply_code);
 
     if (pidfilename)
     {
@@ -501,6 +514,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   if (flag_reject)
   {
 	bool do_reject = false;
+        bool do_defer = false;
 	if (reject_score == -1 && !assassin->spam_flag().empty())
 		do_reject = true;
 	if (reject_score != -1)
@@ -521,12 +535,31 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 			debug(D_MISC, "SA score: %d", score);
 			if (score >= reject_score)
 				do_reject = true;
+                        if(flag_random_defer && score >= random_defer_score){
+                                int random_number, random_mod;
+                                srand ( time(NULL) );
+                                random_mod=score*4-3*random_defer_score-2;
+                                if(random_mod>2){
+                                        random_number = rand() % random_mod;
+                                }else{
+                                        random_number = 0;
+                                }
+                                debug(D_MISC, "Random mod=%d, num=%d", random_mod, random_number);
+                                if(random_number!=0){
+                                        do_defer = true;
+                                }
+                        }
 		}
 	}
-	if (do_reject)
+	if (do_reject || do_defer)
 	{
-		debug(D_MISC, "Rejecting");
-		smfi_setreply(ctx, const_cast<char*>(reject_reply_code), rejectcode, rejecttext);
+                if(do_defer){
+                        debug(D_ALWAYS, "Defering with %s %s: %s",const_cast<char*>(defer_reply_code), defercode, rejecttext);
+                        smfi_setreply(ctx, const_cast<char*>(defer_reply_code), defercode, rejecttext);
+                }else{
+                        debug(D_ALWAYS, "Rejecting with %s %s: %s",const_cast<char*>(reject_reply_code), rejectcode, rejecttext);
+                        smfi_setreply(ctx, const_cast<char*>(reject_reply_code), rejectcode, rejecttext);
+                }
 
 
 		if (flag_bucket)
@@ -557,8 +590,9 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 			}
 		}
 		
-		if (reject_reply_code[0]==52) return SMFIS_TEMPFAIL; // 4xx
-		return SMFIS_REJECT;
+		if (do_reject && reject_reply_code[0]==52) return SMFIS_TEMPFAIL; // 4xx
+		if (do_reject) return SMFIS_REJECT;
+                if (do_defer) return SMFIS_TEMPFAIL;
 	}
   }
 
@@ -2419,6 +2453,16 @@ FILE *popenv(char *const argv[], const char *type, pid_t *pid)
 	}
 
 	return (iop);
+}
+
+// convert status to nonpermant
+//
+// Replace the first char of a string to convert a status to nonpermanent
+char *to_nonpermanent(char* instring)
+{
+  char* retstring=strdup(instring);
+  retstring[0]=52; // 4
+  return(retstring);
 }
 
 // }}}

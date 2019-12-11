@@ -18,6 +18,7 @@
 .Op Fl f
 .Op Fl g Ar group
 .Op Fl i Ar networks
+.Op Fl l Ar nn
 .Op Fl m
 .Op Fl M
 .Op Fl P Ar pidfile
@@ -146,6 +147,13 @@ Multiple
 flags will append to the list.
 For example, if you list all your internal networks, no outgoing emails
 will be filtered.
+.It Fl l Ar nn
+Randomly defer scanned email if it greater than or equal to
+.Ar nn .
+The probability of defering increases with the spam score. 
+Requires 
+.Fl r
+as an upper limit. 
 .It Fl m
 Disables modification of the 
 .Ql Subject: 
