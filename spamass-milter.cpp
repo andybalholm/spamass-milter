@@ -2459,8 +2459,9 @@ FILE *popenv(char *const argv[], const char *type, pid_t *pid)
 char*
 to_nonpermanent(char* instring)
 {
-  char retstring=strdup(instring);
+  char* retstring=strdup(instring);
   retstring[0]=52; // 4
+  return(retstring);
 }
 
 // }}}
