@@ -9,6 +9,7 @@
 .Nm
 .Fl p Ar socket
 .Op Fl a
+.Op Fl A
 .Op Fl b Ns | Ns Fl B Ar spamaddress
 .Op Fl C Ar rejectcode
 .Op Fl d Ar debugflags
@@ -46,6 +47,9 @@ unmiltered, depending on the parameters in
 .Nm sendmail Ns 's .cf file.
 .It Fl a
 Skips messages received on an authenticated connection.
+.It Fl A
+Always scan and tag messages but treat .Fl T , .Fl i and .Fl a as an exception
+from rejecting and defering mails classified as spam.
 .It Fl b Ar spamaddress
 Redirects tagged spam to the specified email address.
 All envelope recipients are removed, and inserted into the message as

@@ -189,6 +189,7 @@ struct context
 	char *queueid;
 	char *auth_authen;
 	char *auth_ssf;
+        bool onlytag;
 	SpamAssassin *assassin; // pointer to the SA object if we're processing a message
 };
 
