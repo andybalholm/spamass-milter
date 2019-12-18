@@ -602,6 +602,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 			}
 		}
 		
+		if (do_reject && reject_reply_code[0]==52) return SMFIS_TEMPFAIL; // 4xx
 		if (do_reject) return SMFIS_REJECT;
                 if (do_defer) return SMFIS_TEMPFAIL;
 	}
