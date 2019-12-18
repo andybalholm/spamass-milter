@@ -601,7 +601,9 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 				waitpid(pid, NULL, 0);
 			}
 		}
-		return SMFIS_REJECT;
+		
+		if (do_reject) return SMFIS_REJECT;
+                if (do_defer) return SMFIS_TEMPFAIL;
 	}
   }
 
