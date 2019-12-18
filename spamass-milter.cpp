@@ -566,10 +566,10 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 	if (do_reject || do_defer)
 	{
                 if(do_defer){
-                        debug(D_MISC, "Defering");
+                        debug(D_ALWAYS, "Defering with %s %s: %s",const_cast<char*>(defer_reply_code), defercode, rejecttext);
                         smfi_setreply(ctx, const_cast<char*>(defer_reply_code), defercode, rejecttext);
                 }else{
-                        debug(D_MISC, "Rejecting");
+                        debug(D_ALWAYS, "Rejecting with %s %s: %s",const_cast<char*>(reject_reply_code), rejectcode, rejecttext);
                         smfi_setreply(ctx, const_cast<char*>(reject_reply_code), rejectcode, rejecttext);
                 }
 
