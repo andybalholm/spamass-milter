@@ -11,6 +11,7 @@
 .Op Fl a
 .Op Fl A
 .Op Fl b Ns | Ns Fl B Ar spamaddress
+.Op Fl c Ar returncode
 .Op Fl C Ar rejectcode
 .Op Fl d Ar debugflags
 .Op Fl D Ar host
