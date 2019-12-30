@@ -2333,7 +2333,7 @@ void parse_addresslist(char *string, struct addresslist *list)
    while ((token = strsep(&string, ", ")))
    {
       char *addr = (char *)malloc(strlen(token)+3);
-      addr = strcat(addr,"<");
+      addr = strcpy(addr,"<");
       addr = strcat(addr,token);
       addr = strcat(addr,">");
 
