@@ -514,6 +514,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 
   update_or_insert(assassin, ctx, assassin->spam_flag(), &SpamAssassin::set_spam_flag, "X-Spam-Flag");
   update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
+  update_or_insert(assassin, ctx, assassin->spam_relay_country(), &SpamAssassin::set_spam_relay_country, "X-Spam-Relay-Country");
 
   /* Summarily reject the message if SA tagged it, or if we have a minimum
      score, reject if it exceeds that score. */
@@ -1194,8 +1195,9 @@ mlfi_header(SMFICTX* ctx, char* headerf, char* headerv)
     {
       int suppress = 1;
       // memorize content of old fields
-
-      if ( cmp_nocase_partial("X-Spam-Status", headerf) == 0 )
+      if ( cmp_nocase_partial("X-Spam-Relay-Country", headerf) == 0)
+        assassin->set_spam_relay_country(headerv);
+      else if ( cmp_nocase_partial("X-Spam-Status", headerf) == 0 )
 	assassin->set_spam_status(headerv);
       else if ( cmp_nocase_partial("X-Spam-Flag", headerf) == 0 )
 	assassin->set_spam_flag(headerv);
@@ -1762,6 +1764,13 @@ SpamAssassin::d()
 //
 // get values of the different SpamAssassin fields
 //
+
+string&
+SpamAssassin::spam_relay_country()
+{
+ return x_spam_relay_country;
+}
+
 string&
 SpamAssassin::spam_status()
 {
@@ -1882,6 +1891,14 @@ SpamAssassin::set_numrcpt(const int val)
 // set the values of the different SpamAssassin
 // fields in our element. Returns former size of field
 //
+string::size_type
+SpamAssassin::set_spam_relay_country(const string& val)
+{
+ string::size_type old = x_spam_relay_country.size();
+ x_spam_relay_country = val;
+ return (old);
+}
+
 string::size_type
 SpamAssassin::set_spam_status(const string& val)
 {
