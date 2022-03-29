@@ -112,6 +112,7 @@ public:
 
   string& d();
   
+  string& spam_asn();
   string& spam_relay_country();
   string& spam_status();
   string& spam_flag();
@@ -129,6 +130,7 @@ public:
   int     numrcpt();	/* total RCPT TO: recpients */
   int     set_numrcpt();	/* increment total RCPT count */
   int     set_numrcpt(const int);	/* set total RCPT count to n */
+  string::size_type set_spam_asn(const string&);
   string::size_type set_spam_relay_country(const string&);
   string::size_type set_spam_status(const string&);
   string::size_type set_spam_flag(const string&);
@@ -160,7 +162,7 @@ public:
   string outputbuffer;
 
   // Variables for SpamAssassin influenced fields
-  string x_spam_relay_country, x_spam_status, x_spam_flag, x_spam_report, x_spam_prev_content_type;
+  string x_spam_asn, x_spam_relay_country, x_spam_status, x_spam_flag, x_spam_report, x_spam_prev_content_type;
   string x_spam_checker_version, x_spam_level, _content_type, _subject;
 
   // Envelope info: MAIL FROM:, RCPT TO:, and IP address of remote host
