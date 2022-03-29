@@ -5,6 +5,12 @@ Spamass-Milter, a small
 The official location of this project is
     http://savannah.nongnu.org/projects/spamass-milt/
 
+I created this fork as a place to collect patches that aren't
+getting looked at by the upstream project.
+I don't even use SpamAssassin myself anymore, 
+so my maintenance here will be pretty limited too. 
+But I do merge reasonable-looking pull requests.
+
 For information about Sendmail or SpamAssassin, please see 
 	http://www.sendmail.org
 	http://www.spamassassin.org
