@@ -133,7 +133,7 @@ struct smfiDesc smfilter =
   {
     "SpamAssassin", // filter name
     SMFI_VERSION,   // version code -- leave untouched
-    SMFIF_ADDHDRS|SMFIF_CHGHDRS|SMFIF_CHGBODY,  // flags
+    SMFIF_ADDHDRS|SMFIF_CHGHDRS|SMFIF_CHGBODY|SMFIF_QUARANTINE,  // flags
     mlfi_connect, // info filter callback
     mlfi_helo, // HELO filter callback
     mlfi_envfrom, // envelope sender filter callback
@@ -155,6 +155,8 @@ const char *const debugstrings[] = {
 int flag_debug = (1<<D_ALWAYS);
 bool flag_reject = false;
 int reject_score = -1;
+bool flag_quarant = false;
+int quarant_score = -1;
 bool dontmodifyspam = false;    // Don't modify/add body or spam results headers
 bool dontmodify = false;        // Don't add SA headers, ever.
 bool flag_sniffuser = false;
@@ -181,7 +183,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:x";
+   const char *args = "fd:mMp:P:r:u:D:i:b:B:e:x:Q";
    char *sock = NULL;
    bool dofork = false;
    char *pidfilename = NULL;
@@ -232,6 +234,10 @@ main(int argc, char* argv[])
 				flag_reject = true;
 				reject_score = atoi(optarg);
 				break;
+			case 'Q':
+				flag_quarant = true;
+				quarant_score = atoi(optarg);
+				break;
 			case 'u':
 				flag_sniffuser = true;
 				defaultuser = strdup(optarg);
@@ -266,6 +272,12 @@ main(int argc, char* argv[])
 		}
 	}
 
+   if ((flag_quarant && flag_reject) && (quarant_score >= reject_score))
+   {
+	fprintf(stderr, "If both -r and -Q are used, -r score must be higher than -Q score\n");
+	err = 1;
+   }
+
    if (flag_full_email && !flag_sniffuser)
    {
    	  fprintf(stderr, "-e flag requires -u\n");
@@ -297,6 +309,8 @@ main(int argc, char* argv[])
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -M: don't modify the message at all" << endl;
       cout << "   -P pidfile: Put processid in pidfile" << endl;
+      cout << "   -Q nn: quarantine messages with a score >= nn\n"
+              "          use -1 to quarantine any messages tagged by SA." << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n"
               "          use -1 to reject any messages tagged by SA." << endl;
       cout << "   -u defaultuser: pass the recipient's username to spamc.\n"
@@ -423,13 +437,18 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   update_or_insert(assassin, ctx, assassin->spam_status(), &SpamAssassin::set_spam_status, "X-Spam-Status");
 
   /* Summarily reject the message if SA tagged it, or if we have a minimum
-     score, reject if it exceeds that score. */
-  if (flag_reject)
+     score, reject if it exceeds that score.  Same for quarantine */
+  if (flag_reject || flag_quarant)
   {
 	bool do_reject = false;
-	if (reject_score == -1 && !assassin->spam_flag().empty())
+	bool do_quarant = false;
+
+	if (reject_score == -1 && !assassin->spam_flag().empty() && flag_reject)
 		do_reject = true;
-	if (reject_score != -1)
+	if (quarant_score == -1 && !assassin->spam_flag().empty() && flag_quarant)
+		do_quarant = true;
+
+	if ((reject_score != -1) || (quarant_score != -1))
 	{
 		int score, rv;
 		const char *spam_status = assassin->spam_status().c_str();
@@ -445,10 +464,13 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 		else 
 		{
 			debug(D_MISC, "SA score: %d", score);
-			if (score >= reject_score)
+			if ((score >= reject_score) && flag_reject)
 				do_reject = true;
+			if ((score >= quarant_score) && flag_quarant)
+				do_quarant = true;
 		}
 	}
+
 	if (do_reject)
 	{
 		debug(D_MISC, "Rejecting");
@@ -516,6 +538,14 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 #endif 
 		}
 		return SMFIS_REJECT;
+	}
+	if (do_quarant)
+	{
+		debug(D_MISC, "Quarantining");
+		if ( smfi_quarantine( ctx, "SPAM" ) != MI_SUCCESS) {
+			throw string( "Failed to quarantine" );
+		}
+		return SMFIS_CONTINUE;
 	}
   }
 
@@ -831,9 +861,6 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 	struct context *sctx = (struct context*)smfi_getpriv(ctx);
 	SpamAssassin* assassin = sctx->assassin;
 	FILE *p;
-#if defined(__FreeBSD__)
-	int rv;
-#endif
 
 	debug(D_FUNC, "mlfi_envrcpt: enter");
 
