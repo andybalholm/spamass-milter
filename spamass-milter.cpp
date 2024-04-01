@@ -138,7 +138,7 @@ struct smfiDesc smfilter =
   {
     FilterName, // filter name
     SMFI_VERSION,   // version code -- leave untouched
-    SMFIF_ADDHDRS|SMFIF_CHGHDRS|SMFIF_CHGBODY,  // flags
+    SMFIF_ADDHDRS|SMFIF_CHGHDRS|SMFIF_CHGBODY|SMFIF_QUARANTINE,  // flags
     mlfi_connect, // info filter callback
     mlfi_helo, // HELO filter callback
     mlfi_envfrom, // envelope sender filter callback
@@ -162,6 +162,8 @@ bool flag_reject = false;
 bool flag_random_defer = false;
 int reject_score = -1;
 int random_defer_score = -1;
+bool flag_quarant = false;
+int quarant_score = -1;
 bool dontmodifyspam = false;    // Don't modify/add body or spam results headers
 bool dontmodify = false;        // Don't add SA headers, ever.
 bool flag_sniffuser = false;
@@ -193,7 +195,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "aAfd:mMp:P:r:l:u:D:i:b:B:e:xS:R:c:C:g:T:";
+   const char *args = "aAfd:mMp:P:r:l:u:D:i:b:B:e:xS:R:c:C:g:T:Q";
    char *sock = NULL;
    char *group = NULL;
    bool dofork = false;
@@ -205,7 +207,6 @@ main(int argc, char* argv[])
 #endif
 
     openlog("spamass-milter", LOG_PID, LOG_MAIL);
-
 
     /* Process command line options */
     while ((c = getopt(argc, argv, args)) != -1) {
@@ -255,6 +256,10 @@ main(int argc, char* argv[])
                 flag_reject = true;
                 reject_score = atoi(optarg);
                 break;
+			case 'Q':
+				flag_quarant = true;
+				quarant_score = atoi(optarg);
+				break;
             case 'l':
                 flag_random_defer = true;
                 random_defer_score = atoi(optarg);
@@ -309,6 +314,12 @@ main(int argc, char* argv[])
         }
     }
 
+   if ((flag_quarant && flag_reject) && (quarant_score >= reject_score))
+   {
+	fprintf(stderr, "If both -r and -Q are used, -r score must be higher than -Q score\n");
+	err = 1;
+   }
+
    if (flag_full_email && !flag_sniffuser)
    {
    	  fprintf(stderr, "-e flag requires -u\n");
@@ -345,6 +356,8 @@ main(int argc, char* argv[])
       cout << "   -m: don't modify body, Content-type: or Subject:" << endl;
       cout << "   -M: don't modify the message at all" << endl;
       cout << "   -P pidfile: Put processid in pidfile" << endl;
+      cout << "   -Q nn: quarantine messages with a score >= nn\n"
+              "          use -1 to quarantine any messages tagged by SA." << endl;
       cout << "   -r nn: reject messages with a score >= nn with an SMTP error.\n"
               "          use -1 to reject any messages tagged by SA." << endl;
       cout << "   -l nn: randomly defer messages with a score >= nn with an non permanent SMTP error.\n"
@@ -518,14 +531,19 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
   update_or_insert(assassin, ctx, assassin->spam_asn(), &SpamAssassin::set_spam_asn, "X-Spam-ASN");
 
   /* Summarily reject the message if SA tagged it, or if we have a minimum
-     score, reject if it exceeds that score. */
-  if (flag_reject)
+     score, reject if it exceeds that score.  Same for quarantine */
+  if (flag_reject || flag_quarant)
   {
 	bool do_reject = false;
-        bool do_defer = false;
-	if (reject_score == -1 && !assassin->spam_flag().empty())
+	bool do_defer = false;
+	bool do_quarant = false;
+
+	if (reject_score == -1 && !assassin->spam_flag().empty() && flag_reject)
 		do_reject = true;
-	if (reject_score != -1)
+	if (quarant_score == -1 && !assassin->spam_flag().empty() && flag_quarant)
+		do_quarant = true;
+
+	if ((reject_score != -1) || (quarant_score != -1))
 	{
 		int score, rv;
 		const char *spam_status = assassin->spam_status().c_str();
@@ -541,7 +559,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 		else
 		{
 			debug(D_MISC, "SA score: %d", score);
-			if (score >= reject_score)
+			if ((score >= reject_score) && flag_reject)
 				do_reject = true;
                         if(flag_random_defer && score >= random_defer_score){
                                 int random_number, random_mod;
@@ -557,6 +575,8 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
                                         do_defer = true;
                                 }
                         }
+			if ((score >= quarant_score) && flag_quarant)
+				do_quarant = true;
 		}
 	}
 	if(sctx->onlytag){
@@ -607,6 +627,14 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 		if (do_reject && reject_reply_code[0]==52) return SMFIS_TEMPFAIL; // 4xx
 		if (do_reject) return SMFIS_REJECT;
                 if (do_defer) return SMFIS_TEMPFAIL;
+	}
+	if (do_quarant)
+	{
+		debug(D_MISC, "Quarantining");
+		if ( smfi_quarantine( ctx, "SPAM" ) != MI_SUCCESS) {
+			throw string( "Failed to quarantine" );
+		}
+		return SMFIS_CONTINUE;
 	}
   }
 
