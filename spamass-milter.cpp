@@ -195,7 +195,7 @@ int
 main(int argc, char* argv[])
 {
    int c, err = 0;
-   const char *args = "aAfd:mMp:P:r:l:u:D:i:b:B:e:xS:R:c:C:g:T:Q";
+   const char *args = "aAfd:mMp:P:r:l:u:D:i:b:B:e:xS:R:c:C:g:T:Q:";
    char *sock = NULL;
    char *group = NULL;
    bool dofork = false;
@@ -631,7 +631,7 @@ assassinate(SMFICTX* ctx, SpamAssassin* assassin)
 	if (do_quarant)
 	{
 		debug(D_MISC, "Quarantining");
-		if ( smfi_quarantine( ctx, "SPAM" ) != MI_SUCCESS) {
+		if ( smfi_quarantine( ctx, const_cast<char *>("SPAM") ) != MI_SUCCESS) {
 			throw string( "Failed to quarantine" );
 		}
 		return SMFIS_CONTINUE;
