@@ -1058,7 +1058,6 @@ mlfi_envrcpt(SMFICTX* ctx, char** envrcpt)
 			time(&tval);
 			strftime(date, sizeof(date), "%a, %d %b %Y %H:%M:%S %z", localtime(&tval));
 			macro_b = date;
-			warnmacro("b", "ENVRCPT");
 		}
 
 		/* queue ID */
