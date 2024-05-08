@@ -23,11 +23,12 @@
 .Op Fl m
 .Op Fl M
 .Op Fl P Ar pidfile
+.Op Fl Q Ar nn
 .Op Fl r Ar nn
-.Op Fl r rejectmsg
+.Op Fl R Ar rejectmsg
 .Op Fl u Ar defaultuser
 .Op Fl x
-.Op Fl S /path/to/sendmail
+.Op Fl S Ar /path/to/sendmail
 .Op Fl - Ar spamc flags ...
 .Sh DESCRIPTION
 The
@@ -60,7 +61,9 @@ as an exception from rejecting and defering mails classified as spam.
 Redirects tagged spam to the specified email address.
 All envelope recipients are removed, and inserted into the message as
 .Ql X-Spam-Orig-To:
-headers.
+headers. 
+It does not apply to messages that are quarantined with
+.Fl Q .
 .It Fl B Ar spamaddress
 Same as
 .Fl b ,
@@ -199,6 +202,15 @@ headers will still be added.
 Create the file
 .Ar pidfile ,
 containing the processid of the milter.
+.It Fl Q Ar nn
+Quarantine scanned email if it greater than or equal to
+.Ar nn .
+If 
+.Ar -1 ,
+quarantine scanned email if SpamAssassin tags it as spam (useful if you
+are also using the
+.Fl u
+flag, and users have changed their required_hits value).
 .It Fl r Ar nn
 Reject scanned email if it greater than or equal to
 .Ar nn .
