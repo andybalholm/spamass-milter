@@ -56,7 +56,8 @@ Always scan and tag messages but treat
 .Fl i
 and
 .Fl a
-as an exception from rejecting and defering mails classified as spam.
+as an exception from rejecting, quarantining and defering mails
+classified as spam.
 .It Fl b Ar spamaddress
 Redirects tagged spam to the specified email address.
 All envelope recipients are removed, and inserted into the message as
@@ -189,6 +190,7 @@ headers as well.
 Both tagged and untagged mail gets passed through unchanged.
 To be useful, this option should be used with the
 .Fl r ,
+.Fl Q ,
 .Fl b , 
 or
 .Fl B
@@ -203,7 +205,8 @@ Create the file
 .Ar pidfile ,
 containing the processid of the milter.
 .It Fl Q Ar nn
-Quarantine scanned email if it greater than or equal to
+Quarantine scanned email in sendmail's quarantine queue,
+if it greater than or equal to
 .Ar nn .
 If 
 .Ar -1 ,
@@ -211,6 +214,11 @@ quarantine scanned email if SpamAssassin tags it as spam (useful if you
 are also using the
 .Fl u
 flag, and users have changed their required_hits value).
+.Pp
+This can be used with
+.Fl r ,
+but reject takes precedence, so the value given here should have a lower
+value.
 .It Fl r Ar nn
 Reject scanned email if it greater than or equal to
 .Ar nn .
