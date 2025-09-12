@@ -29,6 +29,7 @@
 .Op Fl u Ar defaultuser
 .Op Fl x
 .Op Fl S Ar /path/to/sendmail
+.Op Fl T Ar addresses
 .Op Fl - Ar spamc flags ...
 .Sh DESCRIPTION
 The
@@ -50,9 +51,9 @@ unmiltered, depending on the parameters in
 .It Fl a
 Skips messages received on an authenticated connection.
 .It Fl A
-Always scan and tag messages but treat 
+Always scan and tag messages but treat
 .Fl T
-, 
+,
 .Fl i
 and
 .Fl a
@@ -62,7 +63,7 @@ classified as spam.
 Redirects tagged spam to the specified email address.
 All envelope recipients are removed, and inserted into the message as
 .Ql X-Spam-Orig-To:
-headers. 
+headers.
 It does not apply to messages that are quarantined with
 .Fl Q .
 .It Fl B Ar spamaddress
@@ -76,20 +77,20 @@ and
 may be used.
 .It Fl c Ar returncode
 Mail that is rejected is rejected by default with a 550 returncode.  This option
-allows that to be overridden.  See also 
+allows that to be overridden.  See also
 .Fl C
 and
 .Fl R .
 .It Fl C Ar rejectcode
 Mail that is rejected is rejected by default with a 5.7.1 code.  This option
-allows that to be overridden.  See also 
+allows that to be overridden.  See also
 .Fl R
 and
 .Fl c
 .
 .It Fl d Ar debugflags
-Enables logging. 
-.Ar debugflags 
+Enables logging.
+.Ar debugflags
 is a comma-separated list of tokens:
 .Bl -tag -width "indent"
 .It func
@@ -109,7 +110,7 @@ Calls to field lookup and string comparison functions.
 .It uori
 Calls to the update_or_insert function.
 .It 1
-(historical) Same as 
+(historical) Same as
 .Ar func,misc .
 .It 2
 (historical) Same as
@@ -119,11 +120,11 @@ Calls to the update_or_insert function.
 .Ar func,misc,poll,str,uori .
 .El
 .It Fl D Ar host
-Connects to a remote spamd server on 
-.Ar host , 
+Connects to a remote spamd server on
+.Ar host ,
 instead of using one on localhost.
-This option is deprecated; use 
-.Fl - Fl d Ar host 
+This option is deprecated; use
+.Fl - Fl d Ar host
 instead.
 .It Fl e Ar defaultdomain
 Pass the full user@domain address to spamc.
@@ -133,7 +134,7 @@ This flag is useful if you are using an SQL (or other username) backend
 with spamassassin and have listed the full address there.
 If the recipient name has no domain part (if the recipient is on the
 local machine for example),
-.Ar defaultdomain 
+.Ar defaultdomain
 is added.
 Requires the
 .Fl u
@@ -152,7 +153,7 @@ root, and is incompatible with Sendmail usage.
 Ignores messages if the originating IP is in the network(s) listed.
 The message will be passed through without calling SpamAssassin at all.
 .Ar networks
-is a comma-separated list, where each element can be either an IP address 
+is a comma-separated list, where each element can be either an IP address
 (nnn.nnn.nnn.nnn), a CIDR network (nnn.nnn.nnn.nnn/nn), or a network/netmask
 pair (nnn.nnn.nnn.nnn/nnn.nnn.nnn.nnn).
 Multiple
@@ -163,20 +164,20 @@ will be filtered.
 .It Fl l Ar nn
 Randomly defer scanned email if it greater than or equal to
 .Ar nn .
-The probability of defering increases with the spam score. 
-Requires 
+The probability of defering increases with the spam score.
+Requires
 .Fl r
-as an upper limit. 
+as an upper limit.
 .It Fl m
-Disables modification of the 
-.Ql Subject: 
-and 
-.Ql Content-Type: 
+Disables modification of the
+.Ql Subject:
+and
+.Ql Content-Type:
 headers and
 message body.
 This is useful when SpamAssassin is configured with
 .Ql "defang_mime 0"
-and 
+and
 .Ql "report_header 1" ,
 or when SA is simply used to add headers for postprocessing later.
 Updating the body through the milter interface can be slow for large
@@ -185,19 +186,19 @@ messages.
 Like
 .Fl m ,
 but also disables creation of any SpamAssassin
-.Ql X-Spam-* 
+.Ql X-Spam-*
 headers as well.
 Both tagged and untagged mail gets passed through unchanged.
 To be useful, this option should be used with the
 .Fl r ,
 .Fl Q ,
-.Fl b , 
+.Fl b ,
 or
 .Fl B
 flags.
-If 
+If
 .Fl b
-is used, the 
+is used, the
 .Ql X-Spam-Orig-To:
 headers will still be added.
 .It Fl P Ar pidfile
@@ -208,7 +209,7 @@ containing the processid of the milter.
 Quarantine scanned email in sendmail's quarantine queue,
 if it greater than or equal to
 .Ar nn .
-If 
+If
 .Ar -1 ,
 quarantine scanned email if SpamAssassin tags it as spam (useful if you
 are also using the
@@ -222,7 +223,7 @@ value.
 .It Fl r Ar nn
 Reject scanned email if it greater than or equal to
 .Ar nn .
-If 
+If
 .Ar -1 ,
 reject scanned email if SpamAssassin tags it as spam (useful if you
 are also using the
@@ -243,29 +244,33 @@ option
 .It Fl S Ar /path/to/sendmail
 This option is used in conjunction with the -x option to specify a path
 to sendmail if the default compiled in choice is not satisfactory.
+.It Fl T Ar addresses
+Mail with a recipient that is one of the
+.Ar addresses
+provided (separate with commas) will skip checks and be accepted
 .It Fl u Ar defaultuser
-Pass the username part of the first recipient to spamc with the 
-.Fl u 
+Pass the username part of the first recipient to spamc with the
+.Fl u
 flag.
 This allows user preferences files to be used.
 If the message is addressed to multiple recipients, the username
 .Ar defaultuser
 is passed instead.
 .Pp
-Note that 
+Note that
 .Nm
 does not know whether an email is incoming or outgoing, so a message
 from
-.Aq user1@localdomain.com 
-to 
-.Aq user2@yahoo.com 
-will make 
+.Aq user1@localdomain.com
+to
+.Aq user2@yahoo.com
+will make
 .Nm
-pass 
+pass
 .Fl u Ar user2
 to spamc.
 .It Fl x
-Pass the recipient address through 
+Pass the recipient address through
 .Nm sendmail Fl bv ,
 which will perform virtusertable and alias expansion.
 The resulting username is then passed to spamc.
@@ -275,10 +280,10 @@ flag.  The spamass-milter configuration process does its
 best to find sendmail, but it is possible to override this compiled-in
 setting via the
 .It Fl - Ar spamc flags ...
-Pass all remaining options to spamc. 
+Pass all remaining options to spamc.
 This allows you to connect to a remote spamd with
 .Fl d
-or 
+or
 .Fl p .
 .El
 .Sh FILES
