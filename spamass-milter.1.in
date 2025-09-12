@@ -245,9 +245,13 @@ option
 This option is used in conjunction with the -x option to specify a path
 to sendmail if the default compiled in choice is not satisfactory.
 .It Fl T Ar addresses
-Mail with a recipient that is one of the
+Mail with a recipient that matches one of the
 .Ar addresses
-provided (separate with commas) will skip checks and be accepted
+provided will skip checks and be accepted.
+.Ar addresses
+is a comma-separated list, where each element is an email address. Multiple
+.Fl T
+flags will append to the list.
 .It Fl u Ar defaultuser
 Pass the username part of the first recipient to spamc with the
 .Fl u
